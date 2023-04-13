@@ -1,0 +1,26 @@
+From cb2bdfbcfec2e3c69e1b0e62b50be1d5f0d90ac0 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Thu, 28 Mar 2019 13:13:06 +0100
+Subject: [PATCH 2/2] declare flag EXT_HOST_MLME from linux 3.8.0
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlinux/moal_main.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wlan_src/mlinux/moal_main.h b/wlan_src/mlinux/moal_main.h
+index 2926c92..95f92f5 100755
+--- a/wlan_src/mlinux/moal_main.h
++++ b/wlan_src/mlinux/moal_main.h
+@@ -1837,7 +1837,7 @@ enum ext_mod_params {
+ #endif
+ 	EXT_ROAMOFFLOAD_IN_HS,
+ #ifdef STA_CFG80211
+-#if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
++#if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 8, 0)
+ 	EXT_HOST_MLME,
+ #endif
+ #endif
+-- 
+2.11.0
+

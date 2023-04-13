@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+#
+# EMMY-W1 mfgbridge init script
+#
+
+DAEMON=/opt/emmy-w1/mfg-tools/mfgbridge
+PIDFILE=/var/run/mfgbridge.pid
+DESC="EMMY-W1 mfgbridge"
+RET=1
+
+UART_EMMY=/dev/ttyO3
+UART_BAUD=115200
+
+test -x $DAEMON || exit 1
+
+start() {
+    modprobe -q omap_hsmmc
+    modprobe -q sd8887_mfg
+    hciattach $UART_EMMY any $UART_BAUD flow || return $?
+    hciconfig all up || return $?
+    cd $(dirname $DAEMON) || return $?
+    start-stop-daemon -S -o -q -m -p $PIDFILE -x ./$(basename $DAEMON) \
+        -- &> /dev/null &
+}
+
+stop() {
+    start-stop-daemon -K -o -q -p $PIDFILE
+    rm -f $PIDFILE
+    hciconfig all down
+    killall -q hciattach
+    modprobe -q -r omap_hsmmc
+    modprobe -q -r sd8887_mfg
+}
+
+case "$1" in
+    start)
+        echo -n "Starting ${DESC}: "
+        start
+        RET=$?
+        ;;
+    stop)
+        echo -n "Stopping ${DESC}: "
+        stop
+        RET=$?
+        ;;
+    restart)
+        echo -n "Restarting ${DESC}: "
+        stop
+        start
+        RET=$?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+if [ $RET -eq 0 ]; then
+    echo "$(basename $DAEMON)"
+else
+    echo failed
+fi
+
+exit $RET

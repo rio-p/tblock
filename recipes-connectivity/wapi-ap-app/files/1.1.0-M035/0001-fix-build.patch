@@ -1,0 +1,962 @@
+From d822487fd21dcba5983cb66db9e98caef0667b26 Mon Sep 17 00:00:00 2001
+From: Mario Zessack <mario.zessack@u-blox.com>
+Date: Wed, 5 Jun 2019 08:49:59 +0200
+Subject: [PATCH 1/1] fix build
+
+Signed-off-by: Mario Zessack <mario.zessack@u-blox.com>
+---
+ ECC2.2-2008/Makefile                    |  4 ++--
+ Makefile                                |  1 +
+ Rules.elinux                            |  8 ++++----
+ as/src/Makefile                         |  4 ++--
+ openssl-0.9.8e/Makefile_arm             |  8 ++++----
+ openssl-0.9.8e/crypto/Makefile          |  2 +-
+ openssl-0.9.8e/crypto/aes/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/asn1/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/bf/Makefile       |  2 +-
+ openssl-0.9.8e/crypto/bio/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/bn/Makefile       |  2 +-
+ openssl-0.9.8e/crypto/buffer/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/camellia/Makefile |  2 +-
+ openssl-0.9.8e/crypto/cast/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/comp/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/conf/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/des/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/dh/Makefile       |  2 +-
+ openssl-0.9.8e/crypto/dsa/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/dso/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/ec/Makefile       |  2 +-
+ openssl-0.9.8e/crypto/ecdh/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/ecdsa/Makefile    |  2 +-
+ openssl-0.9.8e/crypto/engine/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/err/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/evp/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/hmac/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/idea/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/krb5/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/lhash/Makefile    |  2 +-
+ openssl-0.9.8e/crypto/md2/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/md4/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/md5/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/mdc2/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/objects/Makefile  |  2 +-
+ openssl-0.9.8e/crypto/ocsp/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/pem/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/pkcs12/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/pkcs7/Makefile    |  2 +-
+ openssl-0.9.8e/crypto/pqueue/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/rand/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/rc2/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/rc4/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/rc5/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/ripemd/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/rsa/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/sha/Makefile      |  2 +-
+ openssl-0.9.8e/crypto/stack/Makefile    |  2 +-
+ openssl-0.9.8e/crypto/store/Makefile    |  2 +-
+ openssl-0.9.8e/crypto/txt_db/Makefile   |  2 +-
+ openssl-0.9.8e/crypto/ui/Makefile       |  2 +-
+ openssl-0.9.8e/crypto/x509/Makefile     |  2 +-
+ openssl-0.9.8e/crypto/x509v3/Makefile   |  2 +-
+ openssl-0.9.8e/engines/Makefile         |  2 +-
+ sms4/sms4lib/lib/Makefile               |  2 +-
+ utils/Makefile                          |  4 ++--
+ utils/uapwapi.c                         | 18 ++++--------------
+ wapid_src/Makefile                      |  4 ++--
+ wapid_src/main.c                        |  6 ++----
+ 59 files changed, 73 insertions(+), 84 deletions(-)
+
+diff --git a/ECC2.2-2008/Makefile b/ECC2.2-2008/Makefile
+index c462ecd..808502d 100755
+--- a/ECC2.2-2008/Makefile
++++ b/ECC2.2-2008/Makefile
+@@ -10,7 +10,7 @@ all:$(LIB).a
+ 
+ $(OBJSDIR)/%.o : %.c
+ 	@if [ ! -d $(OBJSDIR) ]; then \
+-		mkdir $(OBJSDIR);  \
++		mkdir -p $(OBJSDIR);  \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ -c $< 
+ 
+@@ -18,7 +18,7 @@ $(LIB).a: $(OBJS)
+ 	$(AR) rcv $@ $(OBJS) 
+ 	$(RANLIB) $@
+ 	@if [ ! -d $(OUTLIB) ]; then \
+-		mkdir $(OUTLIB);  \
++		mkdir -p $(OUTLIB);  \
+ 	fi
+ 	cp $(LIB).a $(OUTLIB)
+ 	#$(CC) $(CFLAGS)  -shared -o $(LIB).so -Wl -fPIC,-soname=$(LIB).so -Wl,-Bsymbolic -Wl,--whole-archive $(LIB).a -Wl,--no-whole-archive -L. 
+diff --git a/Makefile b/Makefile
+index 849c420..cc5755b 100755
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,7 @@
+ include ./Rules.elinux
+ 
+ SUBDIRS = ECC2.2-2008  openssl-0.9.8e  sms4  wapid_src as utils
++#SUBDIRS = ECC2.2-2008  sms4  wapid_src as utils
+ 
+ clean:
+ 	rm -rf bin lib 
+diff --git a/Rules.elinux b/Rules.elinux
+index f698ef9..1092a88 100755
+--- a/Rules.elinux
++++ b/Rules.elinux
+@@ -14,20 +14,20 @@ MEM_DEBUG   =no
+ ATH	=yes
+ 
+ #TARGET=xscale
+-TARGET=x86
++#TARGET=x86
+ 
+ ifeq ($(TARGET), xscale)
+-	CROSS=/opt/dev_env/XSCALE/usr/local/bin/arm-linux-
++	CROSS?=/opt/dev_env/XSCALE/usr/local/bin/arm-linux-
+ 	CFLAGS += -mbig-endian -O2 -DIWN_XSCALE_AS
+ 	LDFLAGS += -mbig-endian -O2
+ 
+ else ifeq ($(TARGET),x86)
+-	CROSS=
++	CROSS?=
+ 	CFLAGS += -O2 
+ 	LDFLAGS += -O2
+ 
+ else ifeq ($(TARGET),ARM)
+-	CROSS=/usr/local/arm/4.1.1/bin/arm-linux-
++	CROSS?=/usr/local/arm/4.1.1/bin/arm-linux-
+ 	CFLAGS += -O2 
+ 	LDFLAGS += -O2
+ 
+diff --git a/as/src/Makefile b/as/src/Makefile
+index 470b266..939c7eb 100755
+--- a/as/src/Makefile
++++ b/as/src/Makefile
+@@ -14,12 +14,12 @@ CFLAGS += -I../../openssl-0.9.8e/include
+ all:ias
+ $(OBJSDIR)/%.o : %.c
+ 	@if [ ! -d $(OBJSDIR) ]; then \
+-		mkdir $(OBJSDIR); \
++		mkdir -p $(OBJSDIR); \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ -c $< 
+ ias: $(OBJS)
+ 	@if [ ! -d $(BINDIR) ]; then \
+-		mkdir $(BINDIR);   \
++		mkdir -p $(BINDIR);   \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ $(OBJS) -L${LIBDIR} -l$(ECCLIB) -l$(ECCLIB1) -lpthread
+ 	$(STRIP) $@
+diff --git a/openssl-0.9.8e/Makefile_arm b/openssl-0.9.8e/Makefile_arm
+index 059d8d5..9057b10 100755
+--- a/openssl-0.9.8e/Makefile_arm
++++ b/openssl-0.9.8e/Makefile_arm
+@@ -59,19 +59,19 @@ OPENSSLDIR=/usr/local/ssl
+ # equal 4.
+ # PKCS1_CHECK - pkcs1 tests.
+ 
+-CC= /usr/local/arm/4.1.1/bin/arm-linux-gcc
+-CFLAG= -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall
++CC?=$(CROSS)gcc
++CFLAG= -fPIC -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall
+ DEPFLAG= -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_GMP -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 
+ PEX_LIBS= 
+ EX_LIBS= -ldl
+ EXE_EXT= 
+ ARFLAGS= 
+-AR=/usr/local/arm/4.1.1/bin/arm-linux-ar $(ARFLAGS) r
++AR=$(CROSS)ar $(ARFLAGS) r
+ RANLIB= /usr/bin/ranlib
+ PERL= /usr/bin/perl
+ TAR= tar
+ TARFLAGS= --no-recursion
+-MAKEDEPPROG= /usr/local/arm/4.1.1/bin/arm-linux-gcc
++MAKEDEPPROG=$(CC)
+ 
+ # We let the C compiler driver to take care of .s files. This is done in
+ # order to be excused from maintaining a separate set of architecture
+diff --git a/openssl-0.9.8e/crypto/Makefile b/openssl-0.9.8e/crypto/Makefile
+index bb8eaa0..202e88d 100755
+--- a/openssl-0.9.8e/crypto/Makefile
++++ b/openssl-0.9.8e/crypto/Makefile
+@@ -98,7 +98,7 @@ links:
+ lib:	$(LIB)
+ 	@touch lib
+ $(LIB):	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 
+ shared: buildinf.h lib subdirs
+diff --git a/openssl-0.9.8e/crypto/aes/Makefile b/openssl-0.9.8e/crypto/aes/Makefile
+index 0f939eb..aa9f110 100755
+--- a/openssl-0.9.8e/crypto/aes/Makefile
++++ b/openssl-0.9.8e/crypto/aes/Makefile
+@@ -41,7 +41,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/asn1/Makefile b/openssl-0.9.8e/crypto/asn1/Makefile
+index f67c5eb..53b8436 100755
+--- a/openssl-0.9.8e/crypto/asn1/Makefile
++++ b/openssl-0.9.8e/crypto/asn1/Makefile
+@@ -63,7 +63,7 @@ pk:	pk.c
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/bf/Makefile b/openssl-0.9.8e/crypto/bf/Makefile
+index 8441954..ebbef1c 100755
+--- a/openssl-0.9.8e/crypto/bf/Makefile
++++ b/openssl-0.9.8e/crypto/bf/Makefile
+@@ -40,7 +40,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/bio/Makefile b/openssl-0.9.8e/crypto/bio/Makefile
+index 1ef6c2f..76bb0c1 100755
+--- a/openssl-0.9.8e/crypto/bio/Makefile
++++ b/openssl-0.9.8e/crypto/bio/Makefile
+@@ -45,7 +45,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/bn/Makefile b/openssl-0.9.8e/crypto/bn/Makefile
+index 5c3e08f..4e10749 100755
+--- a/openssl-0.9.8e/crypto/bn/Makefile
++++ b/openssl-0.9.8e/crypto/bn/Makefile
+@@ -58,7 +58,7 @@ bnbug: bnbug.c ../../libcrypto.a top
+ 	cc -g -I../../include bnbug.c -o bnbug ../../libcrypto.a
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/buffer/Makefile b/openssl-0.9.8e/crypto/buffer/Makefile
+index 9f3a88d..ffa8713 100755
+--- a/openssl-0.9.8e/crypto/buffer/Makefile
++++ b/openssl-0.9.8e/crypto/buffer/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/camellia/Makefile b/openssl-0.9.8e/crypto/camellia/Makefile
+index 1579de5..861aa7b 100755
+--- a/openssl-0.9.8e/crypto/camellia/Makefile
++++ b/openssl-0.9.8e/crypto/camellia/Makefile
+@@ -41,7 +41,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/cast/Makefile b/openssl-0.9.8e/crypto/cast/Makefile
+index 149956e..824fb7a 100755
+--- a/openssl-0.9.8e/crypto/cast/Makefile
++++ b/openssl-0.9.8e/crypto/cast/Makefile
+@@ -38,7 +38,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/comp/Makefile b/openssl-0.9.8e/crypto/comp/Makefile
+index efda832..ee66a6d 100755
+--- a/openssl-0.9.8e/crypto/comp/Makefile
++++ b/openssl-0.9.8e/crypto/comp/Makefile
+@@ -36,7 +36,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/conf/Makefile b/openssl-0.9.8e/crypto/conf/Makefile
+index 78bb324..784423f 100755
+--- a/openssl-0.9.8e/crypto/conf/Makefile
++++ b/openssl-0.9.8e/crypto/conf/Makefile
+@@ -36,7 +36,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/des/Makefile b/openssl-0.9.8e/crypto/des/Makefile
+index 523dfe3..c30b7f4 100755
+--- a/openssl-0.9.8e/crypto/des/Makefile
++++ b/openssl-0.9.8e/crypto/des/Makefile
+@@ -54,7 +54,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/dh/Makefile b/openssl-0.9.8e/crypto/dh/Makefile
+index d368e33..85d9f64 100755
+--- a/openssl-0.9.8e/crypto/dh/Makefile
++++ b/openssl-0.9.8e/crypto/dh/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/dsa/Makefile b/openssl-0.9.8e/crypto/dsa/Makefile
+index 676baf7..edbdfa3 100755
+--- a/openssl-0.9.8e/crypto/dsa/Makefile
++++ b/openssl-0.9.8e/crypto/dsa/Makefile
+@@ -35,7 +35,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/dso/Makefile b/openssl-0.9.8e/crypto/dso/Makefile
+index 07f5d8d..342dde5 100755
+--- a/openssl-0.9.8e/crypto/dso/Makefile
++++ b/openssl-0.9.8e/crypto/dso/Makefile
+@@ -35,7 +35,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ec/Makefile b/openssl-0.9.8e/crypto/ec/Makefile
+index 42f7bb7..7a0c338 100755
+--- a/openssl-0.9.8e/crypto/ec/Makefile
++++ b/openssl-0.9.8e/crypto/ec/Makefile
+@@ -38,7 +38,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ecdh/Makefile b/openssl-0.9.8e/crypto/ecdh/Makefile
+index 95aa69f..a856a62 100755
+--- a/openssl-0.9.8e/crypto/ecdh/Makefile
++++ b/openssl-0.9.8e/crypto/ecdh/Makefile
+@@ -34,7 +34,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ecdsa/Makefile b/openssl-0.9.8e/crypto/ecdsa/Makefile
+index 16a93cd..db7edfb 100755
+--- a/openssl-0.9.8e/crypto/ecdsa/Makefile
++++ b/openssl-0.9.8e/crypto/ecdsa/Makefile
+@@ -34,7 +34,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/engine/Makefile b/openssl-0.9.8e/crypto/engine/Makefile
+index 13f211a..f121077 100755
+--- a/openssl-0.9.8e/crypto/engine/Makefile
++++ b/openssl-0.9.8e/crypto/engine/Makefile
+@@ -41,7 +41,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/err/Makefile b/openssl-0.9.8e/crypto/err/Makefile
+index 23e3840..260acfe 100755
+--- a/openssl-0.9.8e/crypto/err/Makefile
++++ b/openssl-0.9.8e/crypto/err/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/evp/Makefile b/openssl-0.9.8e/crypto/evp/Makefile
+index a4f9ae2..a4d50f8 100755
+--- a/openssl-0.9.8e/crypto/evp/Makefile
++++ b/openssl-0.9.8e/crypto/evp/Makefile
+@@ -55,7 +55,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/hmac/Makefile b/openssl-0.9.8e/crypto/hmac/Makefile
+index 01f10c3..8d60e01 100755
+--- a/openssl-0.9.8e/crypto/hmac/Makefile
++++ b/openssl-0.9.8e/crypto/hmac/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/idea/Makefile b/openssl-0.9.8e/crypto/idea/Makefile
+index b2e7add..3890e5f 100755
+--- a/openssl-0.9.8e/crypto/idea/Makefile
++++ b/openssl-0.9.8e/crypto/idea/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/krb5/Makefile b/openssl-0.9.8e/crypto/krb5/Makefile
+index 1407739..b93136a 100755
+--- a/openssl-0.9.8e/crypto/krb5/Makefile
++++ b/openssl-0.9.8e/crypto/krb5/Makefile
+@@ -34,7 +34,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/lhash/Makefile b/openssl-0.9.8e/crypto/lhash/Makefile
+index 82bddac..70c9362 100755
+--- a/openssl-0.9.8e/crypto/lhash/Makefile
++++ b/openssl-0.9.8e/crypto/lhash/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/md2/Makefile b/openssl-0.9.8e/crypto/md2/Makefile
+index 17f878a..f7a8578 100755
+--- a/openssl-0.9.8e/crypto/md2/Makefile
++++ b/openssl-0.9.8e/crypto/md2/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/md4/Makefile b/openssl-0.9.8e/crypto/md4/Makefile
+index ef97bb0..250284a 100755
+--- a/openssl-0.9.8e/crypto/md4/Makefile
++++ b/openssl-0.9.8e/crypto/md4/Makefile
+@@ -34,7 +34,7 @@ top:
+ all:    lib
+ 
+ lib:    $(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/md5/Makefile b/openssl-0.9.8e/crypto/md5/Makefile
+index 849a0a5..2faec7a 100755
+--- a/openssl-0.9.8e/crypto/md5/Makefile
++++ b/openssl-0.9.8e/crypto/md5/Makefile
+@@ -38,7 +38,7 @@ top:
+ all:    lib
+ 
+ lib:    $(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/mdc2/Makefile b/openssl-0.9.8e/crypto/mdc2/Makefile
+index 1d064f1..a74b627 100755
+--- a/openssl-0.9.8e/crypto/mdc2/Makefile
++++ b/openssl-0.9.8e/crypto/mdc2/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/objects/Makefile b/openssl-0.9.8e/crypto/objects/Makefile
+index c48beca..b210957 100755
+--- a/openssl-0.9.8e/crypto/objects/Makefile
++++ b/openssl-0.9.8e/crypto/objects/Makefile
+@@ -34,7 +34,7 @@ top:
+ all:	obj_dat.h lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ocsp/Makefile b/openssl-0.9.8e/crypto/ocsp/Makefile
+index 0fe0289..e71c8f1 100755
+--- a/openssl-0.9.8e/crypto/ocsp/Makefile
++++ b/openssl-0.9.8e/crypto/ocsp/Makefile
+@@ -36,7 +36,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/pem/Makefile b/openssl-0.9.8e/crypto/pem/Makefile
+index 742194f..6a3d9e1 100755
+--- a/openssl-0.9.8e/crypto/pem/Makefile
++++ b/openssl-0.9.8e/crypto/pem/Makefile
+@@ -36,7 +36,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/pkcs12/Makefile b/openssl-0.9.8e/crypto/pkcs12/Makefile
+index 3a7498f..094cb76 100755
+--- a/openssl-0.9.8e/crypto/pkcs12/Makefile
++++ b/openssl-0.9.8e/crypto/pkcs12/Makefile
+@@ -39,7 +39,7 @@ test:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/pkcs7/Makefile b/openssl-0.9.8e/crypto/pkcs7/Makefile
+index 3f7e88b..67948d1 100755
+--- a/openssl-0.9.8e/crypto/pkcs7/Makefile
++++ b/openssl-0.9.8e/crypto/pkcs7/Makefile
+@@ -54,7 +54,7 @@ verify: verify.o example.o lib
+ 	$(CC) $(CFLAGS) -o verify verify.o $(PEX_LIBS) example.o $(LIB) $(EX_LIBS)
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/pqueue/Makefile b/openssl-0.9.8e/crypto/pqueue/Makefile
+index d0c39d2..f76b17c 100755
+--- a/openssl-0.9.8e/crypto/pqueue/Makefile
++++ b/openssl-0.9.8e/crypto/pqueue/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/rand/Makefile b/openssl-0.9.8e/crypto/rand/Makefile
+index 3c1ab5b..f8a73d5 100755
+--- a/openssl-0.9.8e/crypto/rand/Makefile
++++ b/openssl-0.9.8e/crypto/rand/Makefile
+@@ -35,7 +35,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/rc2/Makefile b/openssl-0.9.8e/crypto/rc2/Makefile
+index 73eac34..b0abcf3 100755
+--- a/openssl-0.9.8e/crypto/rc2/Makefile
++++ b/openssl-0.9.8e/crypto/rc2/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/rc4/Makefile b/openssl-0.9.8e/crypto/rc4/Makefile
+index 7857c95..352f5ff 100755
+--- a/openssl-0.9.8e/crypto/rc4/Makefile
++++ b/openssl-0.9.8e/crypto/rc4/Makefile
+@@ -37,7 +37,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/rc5/Makefile b/openssl-0.9.8e/crypto/rc5/Makefile
+index efb0f36..f57e198 100755
+--- a/openssl-0.9.8e/crypto/rc5/Makefile
++++ b/openssl-0.9.8e/crypto/rc5/Makefile
+@@ -40,7 +40,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ripemd/Makefile b/openssl-0.9.8e/crypto/ripemd/Makefile
+index d55875c..d6753ff 100755
+--- a/openssl-0.9.8e/crypto/ripemd/Makefile
++++ b/openssl-0.9.8e/crypto/ripemd/Makefile
+@@ -38,7 +38,7 @@ top:
+ all:    lib
+ 
+ lib:    $(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/rsa/Makefile b/openssl-0.9.8e/crypto/rsa/Makefile
+index 1390081..d105fdf 100755
+--- a/openssl-0.9.8e/crypto/rsa/Makefile
++++ b/openssl-0.9.8e/crypto/rsa/Makefile
+@@ -37,7 +37,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/sha/Makefile b/openssl-0.9.8e/crypto/sha/Makefile
+index 42a8c5b..6f4a1b5 100755
+--- a/openssl-0.9.8e/crypto/sha/Makefile
++++ b/openssl-0.9.8e/crypto/sha/Makefile
+@@ -38,7 +38,7 @@ top:
+ all:    lib
+ 
+ lib:    $(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/stack/Makefile b/openssl-0.9.8e/crypto/stack/Makefile
+index 5327692..dcf0a8e 100755
+--- a/openssl-0.9.8e/crypto/stack/Makefile
++++ b/openssl-0.9.8e/crypto/stack/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/store/Makefile b/openssl-0.9.8e/crypto/store/Makefile
+index 0dcfd78..36f9e2c 100755
+--- a/openssl-0.9.8e/crypto/store/Makefile
++++ b/openssl-0.9.8e/crypto/store/Makefile
+@@ -35,7 +35,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/txt_db/Makefile b/openssl-0.9.8e/crypto/txt_db/Makefile
+index e6f3033..30647a6 100755
+--- a/openssl-0.9.8e/crypto/txt_db/Makefile
++++ b/openssl-0.9.8e/crypto/txt_db/Makefile
+@@ -33,7 +33,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/ui/Makefile b/openssl-0.9.8e/crypto/ui/Makefile
+index a685659..3685c10 100755
+--- a/openssl-0.9.8e/crypto/ui/Makefile
++++ b/openssl-0.9.8e/crypto/ui/Makefile
+@@ -37,7 +37,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/x509/Makefile b/openssl-0.9.8e/crypto/x509/Makefile
+index ddcc312..3bc3f56 100755
+--- a/openssl-0.9.8e/crypto/x509/Makefile
++++ b/openssl-0.9.8e/crypto/x509/Makefile
+@@ -43,7 +43,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/crypto/x509v3/Makefile b/openssl-0.9.8e/crypto/x509v3/Makefile
+index 556ef35..244d5bf 100755
+--- a/openssl-0.9.8e/crypto/x509v3/Makefile
++++ b/openssl-0.9.8e/crypto/x509v3/Makefile
+@@ -43,7 +43,7 @@ top:
+ all:	lib
+ 
+ lib:	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB) || echo Never mind.
+ 	@touch lib
+ 
+diff --git a/openssl-0.9.8e/engines/Makefile b/openssl-0.9.8e/engines/Makefile
+index 88f8390..dcee016 100755
+--- a/openssl-0.9.8e/engines/Makefile
++++ b/openssl-0.9.8e/engines/Makefile
+@@ -71,7 +71,7 @@ lib:	$(LIBOBJ)
+ 				link_o.$(SHLIB_TARGET); \
+ 		done; \
+ 	else \
+-		$(AR) $(LIB) $(LIBOBJ); \
++		$(AR) r $(LIB) $(LIBOBJ); \
+ 		$(RANLIB) $(LIB) || echo Never mind.; \
+ 	fi; \
+ 	touch lib
+diff --git a/sms4/sms4lib/lib/Makefile b/sms4/sms4lib/lib/Makefile
+index 3d6ef86..deb3243 100755
+--- a/sms4/sms4lib/lib/Makefile
++++ b/sms4/sms4lib/lib/Makefile
+@@ -15,7 +15,7 @@ endif
+ 
+ $(OBJSDIR)/%.o : %.c
+ 	@if [ ! -d $(OBJSDIR) ]; then \
+-		mkdir $(OBJSDIR);  \
++		mkdir -p $(OBJSDIR);  \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ -c $< 
+ 
+diff --git a/utils/Makefile b/utils/Makefile
+index af7184b..f567e3c 100755
+--- a/utils/Makefile
++++ b/utils/Makefile
+@@ -13,10 +13,10 @@ CFLAGS += -I../openssl-0.9.8e/include
+ all:uapwapi
+ $(OBJSDIR)/%.o : %.c
+ 	@if [ ! -d $(OBJSDIR) ]; then \
+-		mkdir $(OBJSDIR); \
++		mkdir -p $(OBJSDIR); \
+ 	fi
+ 	@if [ ! -d $(BINDIR) ]; then \
+-		mkdir $(BINDIR);  \
++		mkdir -p $(BINDIR);  \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ -c $< 
+ uapwapi: $(OBJS)
+diff --git a/utils/uapwapi.c b/utils/uapwapi.c
+index 445af4c..e0cb875 100755
+--- a/utils/uapwapi.c
++++ b/utils/uapwapi.c
+@@ -29,7 +29,7 @@
+ #ifdef ANDROID
+ #define WAPI_PATH  "/data/wapi"
+ #else
+-#define WAPI_PATH  "/etc"
++#define WAPI_PATH  "/etc/wapi"
+ #endif
+ 
+ #define CERT_TYPE_X509    1
+@@ -1087,7 +1087,7 @@ process_reset_wapid()
+         system(line);
+     }
+ #else
+-    system("pkill wapid");
++    system("killall wapid");
+ #endif
+     wlan_config_change("CERT_NAME", "");
+     wlan_config_change("CERT_STATUS", "0");
+@@ -1149,11 +1149,7 @@ process_setup_as(int argc, char **argv, char *ethname)
+     auth_name = argv[2];
+     org_name = argv[3];
+     // prepare AS.conf
+-#ifdef ANDROID
+     sprintf(line, "%s/AS.conf", WAPI_PATH);
+-#else
+-    sprintf(line, "AS.conf");
+-#endif
+     fd = fopen(line, "r");
+     if (fd != NULL) {
+         printf("Error: AS already configured.\n");
+@@ -1186,11 +1182,7 @@ process_setup_as(int argc, char **argv, char *ethname)
+     system(line);
+ 
+     // start ias with AS.conf
+-#ifdef ANDROID
+     sprintf(line, "ias %s/AS.conf", WAPI_PATH);
+-#else
+-    sprintf(line, "./ias");
+-#endif
+     system(line);
+     return 0;
+ }
+@@ -1244,7 +1236,7 @@ check_import_file_type_old(FILE * fd)
+ #ifdef ANDROID
+ #define FILE_P12_TMP            "/tmp/p12.tmp"
+ #else
+-#define FILE_P12_TMP            "p12.tmp"
++#define FILE_P12_TMP            "/var/run/p12.tmp"
+ #endif
+ 
+ static int
+@@ -1565,13 +1557,11 @@ wlan_section_change(char *if_name, int mode, int type, char *str, int vlan,
+     FILE *fd, *fd_tmp;
+     int start, update;
+     char s1[16], s2[64], s3[64], s4[128], s5[16], s6[16];
+-#ifdef ANDROID
+     sprintf(filename, "%s/wlan.conf", WAPI_PATH);
+     sprintf(tmp_file, "%s/wlan.conf.tmp", WAPI_PATH);
++#ifdef ANDROID
+     sprintf(line, "cp %s %s", filename, tmp_file);
+ #else
+-    sprintf(filename, "wlan.conf");
+-    sprintf(tmp_file, "wlan.conf.tmp");
+     sprintf(line, "cp -f %s %s", filename, tmp_file);
+ #endif
+     system(line);
+diff --git a/wapid_src/Makefile b/wapid_src/Makefile
+index c040b60..8416b30 100755
+--- a/wapid_src/Makefile
++++ b/wapid_src/Makefile
+@@ -12,12 +12,12 @@ CFLAGS += -fsigned-char -Wall -W -O2 -I./include -D$(TARGET)
+ all:wapid
+ $(OBJSDIR)/%.o : %.c
+ 	@if [ ! -d $(OBJSDIR) ]; then \
+-		mkdir $(OBJSDIR);  \
++		mkdir -p $(OBJSDIR);  \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ -c $< 
+ wapid: $(OBJS)
+ 	@if [ ! -d $(BINDIR) ]; then \
+-		mkdir $(BINDIR);  \
++		mkdir -p $(BINDIR);  \
+ 	fi
+ 	$(CC) $(CFLAGS) -o $@ $(OBJS) -L${LIBDIR} -l$(SMS4LIB) -l$(ECCLIB) 
+ 	$(STRIP) $@
+diff --git a/wapid_src/main.c b/wapid_src/main.c
+index 98c6031..a1bf3ca 100755
+--- a/wapid_src/main.c
++++ b/wapid_src/main.c
+@@ -66,6 +66,8 @@
+ 
+ #ifdef ANDROID
+ #define WAPI_PATH  "/data/wapi"
++#else
++#define WAPI_PATH  "/etc/wapi"
+ #endif
+ 
+ extern int debug;
+@@ -1469,11 +1471,7 @@ parse_opts(int argc, char **argv)
+     if (strlen(eloop.fileconfig) == 0) {
+         FILE *fd;
+         char file_name[128];
+-#ifdef ANDROID
+         sprintf(file_name, "%s/wlan.conf", WAPI_PATH);
+-#else
+-        sprintf(file_name, "wlan.conf");
+-#endif
+         fd = fopen(file_name, "r");
+         if (fd == NULL) {
+             printf("Can't find config file\n");
+-- 
+2.11.0
+

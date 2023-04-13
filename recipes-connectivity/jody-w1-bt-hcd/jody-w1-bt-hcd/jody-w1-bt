@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+#
+# JODY-W1 Bluetooth init script
+#
+
+PIDFILE=/var/run/hciattach-jody-w1.pid
+DAEMON=/usr/bin/hciattach
+DESC="JODY-W1 Bluetooth init"
+CONFIG=/etc/default/jody-w1-bt
+
+if [ ! -f $CONFIG ]; then
+	echo "$0: failed to open $CONFIG"
+	exit 1
+fi
+
+. $CONFIG
+
+RET=1
+
+test -x $DAEMON || exit 1
+
+start() {
+	modprobe -q ftdi_sio
+	let i=0
+	while [ $i -lt 10 -a ! -c $TTY ]; do
+		sleep 1
+		let i=i+1
+	done
+	brcm_patchram_plus --no2bytes --tosleep 50000 --baudrate 3000000 \
+		--use_baudrate_for_download --patchram "$PATCHRAMFILE" $TTY
+	modprobe -q hci_uart
+	$DAEMON $TTY $HCIATTACH_ARGS
+	pid=$(pgrep -f $DAEMON)
+	if [ -z "$pid" ]; then
+		echo "failed"
+		exit 1
+	fi
+	echo $pid > $PIDFILE
+	hciconfig all up
+}
+
+stop() {
+	hciconfig all down
+	if [ -e $PIDFILE ]; then
+		kill $(cat $PIDFILE)
+		rm -f $PIDFILE
+	fi
+}
+
+case "$1" in
+	start)
+		test -f $PIDFILE && exit 1
+		echo -n "Starting ${DESC}: "
+		start
+		RET=$?
+		echo "$(basename $DAEMON)"
+		;;
+	stop)
+		echo -n "Stopping ${DESC}: "
+		stop
+		RET=$?
+		echo "$(basename $DAEMON)"
+		;;
+	restart)
+		echo -n "Restarting ${DESC}: "
+		stop
+		start
+		RET=$?
+		echo "$(basename $DAEMON)"
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+esac
+
+exit $RET

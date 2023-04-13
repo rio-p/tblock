@@ -1,0 +1,13 @@
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 69d6ade..e960bc0 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -1973,7 +1973,7 @@ woal_recover_fast_link_sync_info(moal_handle *handle)
+ 		goto exit;
+ 	}
+ 
+-	memset(&ap_info, sizeof(mlan_ext_ap_basic_info), 0);
++	memset(&ap_info, 0, sizeof(mlan_ext_ap_basic_info));
+ 
+ 	do_gettimeofday(&tstamp);
+ 	PRINTM(MMSG,

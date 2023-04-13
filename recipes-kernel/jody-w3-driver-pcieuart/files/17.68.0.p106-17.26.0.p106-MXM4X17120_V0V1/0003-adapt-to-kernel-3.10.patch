@@ -1,0 +1,31 @@
+From 8890333fcc7a95e0bf2f9e8febeca0f90632aefa Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Tue, 11 Jun 2019 15:33:03 +0200
+Subject: [PATCH] jody-w3-driver-pcieuart: adapt to kernel 3.10.40
+
+Implements PGM_ZU_JW3-11.
+
+Signed-off-by: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+---
+ wlan_src/mlinux/moal_sta_cfg80211.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/wlan_src/mlinux/moal_sta_cfg80211.c b/wlan_src/mlinux/moal_sta_cfg80211.c
+index f048154..178ccff 100755
+--- a/wlan_src/mlinux/moal_sta_cfg80211.c
++++ b/wlan_src/mlinux/moal_sta_cfg80211.c
+@@ -1074,7 +1074,11 @@ woal_testmode_cmd(struct wiphy *wiphy, void *data, int len)
+ 	if (!priv)
+ 		return -EINVAL;
+ 
++#if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
+ 	err = nla_parse(tb, MOAL_TM_ATTR_MAX, data, len, moal_tm_policy, NULL);
++#else
++	err = nla_parse(tb, MOAL_TM_ATTR_MAX, data, len, moal_tm_policy);
++#endif
+ 	if (err)
+ 		return err;
+ 
+-- 
+2.7.4
+

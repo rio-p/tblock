@@ -1,0 +1,186 @@
+From 4926009fd0e34fa8f78f32f1892a53d512ac59a1 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 24 Jan 2018 18:17:49 +0100
+Subject: [PATCH] port to linux 4.10
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlinux/moal_cfg80211.h     | 14 ++++++++++++++
+ wlan_src/mlinux/moal_ioctl.c        |  4 ++--
+ wlan_src/mlinux/moal_main.c         |  9 +++++++--
+ wlan_src/mlinux/moal_main.h         | 15 +++++++++++++++
+ wlan_src/mlinux/moal_shim.c         |  2 +-
+ wlan_src/mlinux/moal_sta_cfg80211.c | 13 ++++++++++---
+ 6 files changed, 49 insertions(+), 8 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_cfg80211.h b/wlan_src/mlinux/moal_cfg80211.h
+index ba237ff..554a497 100755
+--- a/wlan_src/mlinux/moal_cfg80211.h
++++ b/wlan_src/mlinux/moal_cfg80211.h
+@@ -128,6 +128,20 @@ int woal_set_rf_channel(moal_private *priv,
+ 			struct ieee80211_channel *chan,
+ 			enum nl80211_channel_type channel_type,
+ 			t_u8 wait_option);
++
++static inline int
++woal_cfg80211_scan_done(struct cfg80211_scan_request *request, bool aborted)
++{
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
++	struct cfg80211_scan_info info;
++	info.aborted = aborted;
++	cfg80211_scan_done(request, &info);
++#else
++	cfg80211_scan_done(request, aborted);
++#endif
++	return 0;
++}
++
+ mlan_status woal_inform_bss_from_scan_result(moal_private *priv,
+ 					     mlan_ssid_bssid *ssid_bssid,
+ 					     t_u8 wait_option);
+diff --git a/wlan_src/mlinux/moal_ioctl.c b/wlan_src/mlinux/moal_ioctl.c
+index 6e9ef91..d2b2dfc 100755
+--- a/wlan_src/mlinux/moal_ioctl.c
++++ b/wlan_src/mlinux/moal_ioctl.c
+@@ -3798,9 +3798,9 @@ woal_cancel_scan(moal_private *priv, t_u8 wait_option)
+ 	if (IS_STA_CFG80211(cfg80211_wext) && handle->scan_request) {
+ 	    /** some supplicant can not handle SCAN abort event */
+ 		if (scan_priv->bss_type == MLAN_BSS_TYPE_STA)
+-			cfg80211_scan_done(handle->scan_request, MTRUE);
++			woal_cfg80211_scan_done(handle->scan_request, MTRUE);
+ 		else
+-			cfg80211_scan_done(handle->scan_request, MFALSE);
++			woal_cfg80211_scan_done(handle->scan_request, MFALSE);
+ 		handle->scan_request = NULL;
+ 	}
+ 	spin_unlock_irqrestore(&handle->scan_req_lock, flags);
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 1246400..72c10fd 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -3050,7 +3050,7 @@ woal_close(struct net_device *dev)
+ 		woal_clear_conn_params(priv);
+ 	spin_lock_irqsave(&priv->phandle->scan_req_lock, flags);
+ 	if (IS_STA_CFG80211(cfg80211_wext) && priv->phandle->scan_request) {
+-		cfg80211_scan_done(priv->phandle->scan_request, MTRUE);
++		woal_cfg80211_scan_done(priv->phandle->scan_request, MTRUE);
+ 		priv->phandle->scan_request = NULL;
+ 		priv->phandle->scan_priv = NULL;
+ 	}
+@@ -5307,7 +5307,12 @@ woal_create_dump_dir(moal_handle *phandle, char *dir_buf, int buf_size)
+ 		goto default_dir;
+ 	}
+ 	ret = vfs_mkdir(path.dentry->d_inode, dentry, 0777);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
+ 	mutex_unlock(&path.dentry->d_inode->i_mutex);
++#else
++	inode_unlock(path.dentry->d_inode);
++#endif
++
+ 	if (ret < 0) {
+ 		PRINTM(MMSG, "Create directory failure, use default folder\n");
+ 		goto default_dir;
+@@ -6265,7 +6270,7 @@ woal_cleanup_module(void)
+ 						  flags);
+ 				if (IS_STA_CFG80211(cfg80211_wext) &&
+ 				    handle->scan_request) {
+-					cfg80211_scan_done(handle->scan_request,
++					woal_cfg80211_scan_done(handle->scan_request,
+ 							   MTRUE);
+ 					handle->scan_request = NULL;
+ 					handle->scan_priv = NULL;
+diff --git a/wlan_src/mlinux/moal_main.h b/wlan_src/mlinux/moal_main.h
+index 8d711c3..2b7e3f6 100755
+--- a/wlan_src/mlinux/moal_main.h
++++ b/wlan_src/mlinux/moal_main.h
+@@ -155,6 +155,17 @@ Change log:
+ #endif
+ 
+ /**
++ * Linux kernel later 4.7 use nl80211_band instead of ieee80211_band
++ * Linux kernel later 4.7 use new macro
++ */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
++#define ieee80211_band          nl80211_band
++#define IEEE80211_BAND_2GHZ     NL80211_BAND_2GHZ
++#define IEEE80211_BAND_5GHZ     NL80211_BAND_5GHZ
++#define IEEE80211_NUM_BANDS     NUM_NL80211_BANDS
++#endif
++
++/**
+  * define write_can_lock() to fix compile issue on ACTIA platform
+  */
+ #if !defined(write_can_lock) && defined(CONFIG_PREEMPT_RT_FULL)
+@@ -1314,7 +1325,11 @@ woal_set_trans_start(struct net_device *dev)
+ 	for (i = 0; i < dev->num_tx_queues; i++)
+ 		netdev_get_tx_queue(dev, i)->trans_start = jiffies;
+ #endif
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+ 	dev->trans_start = jiffies;
++#else
++	netif_trans_update(dev);
++#endif
+ }
+ 
+ /**
+diff --git a/wlan_src/mlinux/moal_shim.c b/wlan_src/mlinux/moal_shim.c
+index b0e6780..3802e0f 100755
+--- a/wlan_src/mlinux/moal_shim.c
++++ b/wlan_src/mlinux/moal_shim.c
+@@ -1105,7 +1105,7 @@ moal_recv_event(IN t_void *pmoal_handle, IN pmlan_event pmevent)
+ 					spin_lock_irqsave(&priv->phandle->
+ 							  scan_req_lock, flags);
+ 					if (priv->phandle->scan_request) {
+-						cfg80211_scan_done(priv->
++						woal_cfg80211_scan_done(priv->
+ 								   phandle->
+ 								   scan_request,
+ 								   MFALSE);
+diff --git a/wlan_src/mlinux/moal_sta_cfg80211.c b/wlan_src/mlinux/moal_sta_cfg80211.c
+index 71ef155..d429b33 100755
+--- a/wlan_src/mlinux/moal_sta_cfg80211.c
++++ b/wlan_src/mlinux/moal_sta_cfg80211.c
+@@ -2209,7 +2209,7 @@ woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+ 	if (priv->fake_scan_complete || !woal_is_scan_result_expired(priv)) {
+ 		PRINTM(MEVENT, "Reporting fake scan results\n");
+ 		woal_inform_bss_from_scan_result(priv, NULL, MOAL_IOCTL_WAIT);
+-		cfg80211_scan_done(request, MFALSE);
++		woal_cfg80211_scan_done(request, MFALSE);
+ 		return ret;
+ 	}
+ 	memset(&bss_info, 0, sizeof(bss_info));
+@@ -2219,7 +2219,7 @@ woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+ 			PRINTM(MEVENT, "Block scan in mlan module\n");
+ 			woal_inform_bss_from_scan_result(priv, NULL,
+ 							 MOAL_IOCTL_WAIT);
+-			cfg80211_scan_done(request, MFALSE);
++			woal_cfg80211_scan_done(request, MFALSE);
+ 			return ret;
+ 		}
+ 	}
+@@ -2235,6 +2235,13 @@ woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+ 	priv->phandle->scan_request = request;
+ 	spin_unlock_irqrestore(&priv->phandle->scan_req_lock, flags);
+ 	memset(&scan_req, 0x00, sizeof(scan_req));
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
++	if (!is_broadcast_ether_addr(request->bssid)) {
++		memcpy(scan_req.specific_bssid, request->bssid, ETH_ALEN);
++		PRINTM(MIOCTL, "scan: bssid=" MACSTR "\n",
++		       MAC2STR(scan_req.specific_bssid));
++	}
++#endif
+ 
+ 	for (i = 0; i < priv->phandle->scan_request->n_ssids; i++) {
+ 		memcpy(scan_req.ssid_list[i].ssid,
+@@ -2303,7 +2310,7 @@ woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+ done:
+ 	if (ret) {
+ 		spin_lock_irqsave(&priv->phandle->scan_req_lock, flags);
+-		cfg80211_scan_done(request, MTRUE);
++		woal_cfg80211_scan_done(request, MTRUE);
+ 		priv->phandle->scan_request = NULL;
+ 		priv->phandle->scan_priv = NULL;
+ 		spin_unlock_irqrestore(&priv->phandle->scan_req_lock, flags);
+-- 
+2.11.0
+

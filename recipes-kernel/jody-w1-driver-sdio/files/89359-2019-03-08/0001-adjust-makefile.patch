@@ -1,0 +1,31 @@
+From a5f28e9486950283b1fe7fb831ab0fc02dc912a1 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 7 Jan 2019 10:38:24 +0100
+Subject: [PATCH] adjust makefile
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ Makefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 1f9c76d..e173a8e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -202,10 +202,10 @@ endif
+ ifneq ($(CONFIG_BCMDHD_SDMMC),)
+   DHDCFLAGS += -DBDC -DDHD_BCMEVENTS -DMMC_SDIO_ABORT
+ # Macros for HW-OOB
+-  DHDCFLAGS += -DOOB_INTR_ONLY -DHW_OOB
++#  DHDCFLAGS += -DOOB_INTR_ONLY -DHW_OOB
+ # Enable Below macro for In-Band interrupt
+-#  DHDCFLAGS += -DSDIO_ISR_THREAD
+-  DHDCFLAGS += -DBCMSDIO -DBCMLXSDMMC -DUSE_SDIOFIFO_IOVAR
++  DHDCFLAGS += -DSDIO_ISR_THREAD
++  DHDCFLAGS += -DBCMSDIO -DUSE_SDIOFIFO_IOVAR
+   DHDCFLAGS += -DPROP_TXSTATUS
+   DHDCFLAGS += -DCUSTOM_AMPDU_MPDU=16
+   DHDCFLAGS += -DCUSTOM_AMPDU_BA_WSIZE=64
+-- 
+2.11.0
+

@@ -1,0 +1,185 @@
+From 2b04b30d690239d629c8334e3247ce8ee11519c8 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 15:01:03 +0200
+Subject: [PATCH 1/6] tuxify makefiles
+
+Get Android Makefiles to work with Linux.
+---
+ mbt_src/Makefile  | 39 +++------------------------------------
+ mbtc_src/Makefile | 39 +++------------------------------------
+ wlan_src/Makefile | 37 +++----------------------------------
+ 3 files changed, 9 insertions(+), 106 deletions(-)
+
+diff --git a/mbt_src/Makefile b/mbt_src/Makefile
+index 8c9f2ea..3fa4a80 100755
+--- a/mbt_src/Makefile
++++ b/mbt_src/Makefile
+@@ -47,41 +47,8 @@ endif
+ 
+ 
+ 
+-
+-# KERNELDIR point to the installed kernel directory
+-# for PXA3XX BSP.
+-# KERNELDIR can be set on the command line
+-# make KERNELDIR=/usr/src/arm/<arch-bsp-path>
+-# Alternatively KERNELDIR can be set in the environment.
+-# Default value for KERNELDIR is set below.
+-EXTRA_CFLAGS += -fno-pic
+-ARCH ?= arm64
+-KERNELDIR ?= /usr/src/arm/kk_linux-3.14-pxa1908
+-CROSS_COMPILE ?= /usr/local/aarch64-linux-android-4.8/bin/aarch64-linux-android-
+-
+-# CROSS_COMPILE specify the prefix used for all executables used
+-# during compilation. Only gcc and related bin-utils executables
+-# CROSS_COMPILE can be set on the command line
+-# make CROSS_COMPILE=</usr/local/arm/4.1.1/bin/>arm-linux-
+-# Alternatively CROSS_COMPILE can be set in the environment.
+-# Default value for CROSS_COMPILE is set below.
+-CROSS_COMPILE ?= /usr/local/arm/4.1.1/bin/arm-linux-
+-
+-# INSTALLDIR specify the path to install the kernel module after
+-# succesful compilation.
+-# INSTALLDIR can be set on the command line
+-# make INSTALLDIR=/tftpboot/<rootfs>
+-# Alternatively INSTALLDIR can be set in the environment.
+-# Default value for INSTALL is set below.
+-INSTALLDIR ?= /tftpboot/pxa3xx/root
+-
+-# ARCH specifies the architecture of the target processor, this kernel
+-# module will run.
+-# ARCH can be set on the command line
+-# make ARCH=<arm/i386>
+-# Alternatively ARCH can be set in the environment
+-# Default values of ARCH for specific platform are set below.
+-ARCH ?= arm
++KERNELVERSION_X86 := 	$(shell uname -r)
++KERNELDIR?=/lib/modules/$(KERNELVERSION_X86)/build
+ 
+ 
+ EXTRA_CFLAGS += -I$(KERNELDIR)/include
+@@ -130,7 +97,7 @@ bt8xxx-objs := $(BTOBJS)
+ # Otherwise we were called directly from the command line; invoke the kernel build system.
+ else
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+ endif
+ 
+ ###############################################################
+diff --git a/mbtc_src/Makefile b/mbtc_src/Makefile
+index 7a585c6..372206f 100644
+--- a/mbtc_src/Makefile
++++ b/mbtc_src/Makefile
+@@ -48,41 +48,8 @@ endif
+ 
+ 
+ 
+-
+-# KERNELDIR point to the installed kernel directory
+-# for PXA3XX BSP.
+-# KERNELDIR can be set on the command line
+-# make KERNELDIR=/usr/src/arm/<arch-bsp-path>
+-# Alternatively KERNELDIR can be set in the environment.
+-# Default value for KERNELDIR is set below.
+-EXTRA_CFLAGS += -fno-pic
+-ARCH ?= arm64
+-KERNELDIR ?= /usr/src/arm/kk_linux-3.14-pxa1908
+-CROSS_COMPILE ?= /usr/local/aarch64-linux-android-4.8/bin/aarch64-linux-android-
+-
+-# CROSS_COMPILE specify the prefix used for all executables used
+-# during compilation. Only gcc and related bin-utils executables
+-# CROSS_COMPILE can be set on the command line
+-# make CROSS_COMPILE=</usr/local/arm/4.1.1/bin/>arm-linux-
+-# Alternatively CROSS_COMPILE can be set in the environment.
+-# Default value for CROSS_COMPILE is set below.
+-CROSS_COMPILE ?= /usr/local/arm/4.1.1/bin/arm-linux-
+-
+-# INSTALLDIR specify the path to install the kernel module after
+-# succesful compilation.
+-# INSTALLDIR can be set on the command line
+-# make INSTALLDIR=/tftpboot/<rootfs>
+-# Alternatively INSTALLDIR can be set in the environment.
+-# Default value for INSTALL is set below.
+-INSTALLDIR ?= /tftpboot/pxa3xx/root
+-
+-# ARCH specifies the architecture of the target processor, this kernel
+-# module will run.
+-# ARCH can be set on the command line
+-# make ARCH=<arm/i386>
+-# Alternatively ARCH can be set in the environment
+-# Default values of ARCH for specific platform are set below.
+-ARCH ?= arm
++KERNELVERSION_X86 := 	$(shell uname -r)
++KERNELDIR?=/lib/modules/$(KERNELVERSION_X86)/build
+ 
+ 
+ EXTRA_CFLAGS += -I$(KERNELDIR)/include
+@@ -132,7 +99,7 @@ mbt8xxx-objs := $(BTOBJS)
+ # Otherwise we were called directly from the command line; invoke the kernel build system.
+ else
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+ endif
+ 
+ ###############################################################
+diff --git a/wlan_src/Makefile b/wlan_src/Makefile
+index 9f78672..db8e252 100755
+--- a/wlan_src/Makefile
++++ b/wlan_src/Makefile
+@@ -106,40 +106,9 @@ EXTRA_CFLAGS += -DLINUX
+ 
+ 
+ 
+-# KERNELDIR point to the installed kernel directory.
+-# KERNELDIR can be set on the command line,
+-# make KERNELDIR=/usr/src/arm/<arch-bsp-path>
+-# Alternatively KERNELDIR can be set in the environment.
+-# Default value for KERNELDIR is set below.
+-EXTRA_CFLAGS += -fno-pic
+-ARCH ?= arm64
+-KERNELDIR ?= /usr/src/arm/kk_linux-3.14-pxa1908
+-CROSS_COMPILE ?= /usr/local/aarch64-linux-android-4.8/bin/aarch64-linux-android-
+-
+-# CROSS_COMPILE specify the prefix used for all executables used
+-# during compilation. Only gcc and related bin-utils executables
+-# CROSS_COMPILE can be set on the command line
+-# make CROSS_COMPILE=</usr/local/arm/4.1.1/bin/>arm-linux-
+-# Alternatively CROSS_COMPILE can be set in the environment.
+-# Default value for CROSS_COMPILE is set below.
+-CROSS_COMPILE ?= /usr/local/arm/4.1.1/bin/arm-linux-
+-
+-# INSTALLDIR specify the path to install the kernel module after
+-# succesful compilation.
+-# INSTALLDIR can be set on the command line
+-# make INSTALLDIR=/tftpboot/<rootfs>
+-# Alternatively INSTALLDIR can be set in the environment.
+-# Default value for INSTALL is set below.
+-INSTALLDIR ?= /tftpboot/pxa9xx/root
+-
+-# ARCH specifies the architecture of the target processor, this kernel
+-# module will run.
+-# ARCH can be set on the command line
+-# make ARCH=<arm/i386>
+-# Alternatively ARCH can be set in the environment
+-# Default values of ARCH for specific platform are set below.
+-ARCH ?= arm
+ 
++KERNELVERSION_X86 := 	$(shell uname -r)
++KERNELDIR ?= /lib/modules/$(KERNELVERSION_X86)/build
+ LD += -S
+ 
+ BINDIR = ../bin_sd8xxx
+@@ -422,7 +391,7 @@ sd8xxx-objs := $(MOALOBJS)
+ else
+ 
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
++	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+ 
+ endif
+ 
+-- 
+2.1.4
+

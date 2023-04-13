@@ -1,0 +1,24 @@
+From 0c3880678d7925d505eb23af310bf54865b54f18 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 16:29:09 +0200
+Subject: [PATCH 6/6] mlanevent: disable buffering stdout
+
+---
+ wlan_src/mapp/mlanevent/mlanevent.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/wlan_src/mapp/mlanevent/mlanevent.c b/wlan_src/mapp/mlanevent/mlanevent.c
+index d36f6d7..1e7bebe 100755
+--- a/wlan_src/mapp/mlanevent/mlanevent.c
++++ b/wlan_src/mapp/mlanevent/mlanevent.c
+@@ -2527,6 +2527,7 @@ main(int argc, char *argv[])
+ 	t_u32 event_id = 0;
+ 	int i = 0, no_of_sk = 0, dev_index = -1;
+ 
++	setvbuf(stdout, NULL, _IONBF, 0);
+ 	/* Check command line options */
+ 	while ((opt = getopt_long(argc, argv, "hvti:", long_opts, NULL)) > 0) {
+ 		switch (opt) {
+-- 
+2.1.4
+

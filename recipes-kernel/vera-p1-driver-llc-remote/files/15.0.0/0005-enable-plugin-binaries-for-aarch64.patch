@@ -1,0 +1,32 @@
+From 8694a32c8c5693830f413076b0769837aa1e4a42 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Thu, 10 Jan 2019 12:55:39 +0100
+Subject: [PATCH] enable plugin binaries for aarch64
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ cohda/app/llc/Makefile | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/cohda/app/llc/Makefile b/cohda/app/llc/Makefile
+index b356769..697488d 100755
+--- a/cohda/app/llc/Makefile
++++ b/cohda/app/llc/Makefile
+@@ -119,9 +119,13 @@ lib: lib/libLLC.so
+ lib/libLLC.so: 
+ 	$(MAKE) -C $(CURDIR)/lib 
+ 
++ifeq (,$(findstring aarch64,$$($(CC) -dumpmachine)))
+ plugins-extract:
+ 	@echo "Extracting plugins (binary) for $(BOARD)"
+-	tar -xzf $(CURDIR)/plugins-$(BOARD).tgz 
++	tar -xzf $(CURDIR)/plugins-$(BOARD).tgz
++else
++plugins-extract:
++endif
+ 
+ plugins-archive:
+ 	@echo "Creating binary plugin archive for $(BOARD)"
+-- 
+2.11.0
+

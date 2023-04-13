@@ -1,0 +1,27 @@
+From 54adfbaeb2129d64f330e45614b20460cbbefa9f Mon Sep 17 00:00:00 2001
+From: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Date: Mon, 31 Oct 2016 18:48:16 +0100
+Subject: [PATCH] dont link static
+
+---
+ Host/DutApiWiFiBt/MakeFile_8887 | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Host/DutApiWiFiBt/MakeFile_8887 b/Host/DutApiWiFiBt/MakeFile_8887
+index ee55684..f0d5e8e 100644
+--- a/Host/DutApiWiFiBt/MakeFile_8887
++++ b/Host/DutApiWiFiBt/MakeFile_8887
+@@ -30,8 +30,8 @@ DUTCOMMON = ../DutCommon
+  
+ #CFLAGS=	-O2 
+ CFLAGS= -g -DNONPLUG_SUPPORT -DDEBUG -D_LINUX_ -D_LINUX_FEDORA_ -D_NO_CLASS_  -DBIG_ENDIAN\
+-	-D_IF_SDIO_ -D_SDIO_ -D_W8887_ -D_CAL_REV_D_ -D_W8797_\
+-	-I$(KERNELDIR)/include --static\
++	-D_IF_SDIO_ -D_SDIO_ -D_W8887_ -D_CAL_REV_D_\
++	-I$(KERNELDIR)/include \
+                 -I.
+ 
+ #CFLAGS=-O2 -DDEBUG-D_LINUX_-D_LINUX_FEDORA_ -D_CLIENT_BG_ -D_BT_ -D_HCI_UART_ -D_CAL_REV_D_ -DBIG_ENDIAN -I$(KERNELDIR)/include --static\
+-- 
+2.10.1
+

@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+#
+# JODY-W2 mfgbridge init script
+#
+
+exit_with_error() { echo $@ 1>&2; exit 1; }
+[ $(id -u) == 0 ] || exit_with_error "Priviledged access required"
+
+MFGBRIDGE=/opt/jody-w2/mfg-tools/mfgbridge
+[ -x $MFGBRIDGE ] || exit_with_error "File not executable: '$MFGBRIDGE'"
+MFGBRIDGE_CONF=/opt/jody-w2/mfg-tools/bridge_init.conf
+[ -f $MFGBRIDGE_CONF ] || exit_with_error "File not found: '$MFGBRIDGE_CONF'"
+MFGBRIDGE_PID=/var/run/jody-w2-mfgbridge.pid
+
+JODY_W2_CONF=/etc/default/jody-w2-mfgbridge
+. $JODY_W2_CONF || exit_with_error "Config not found: '$JODY_W2_CONF'"
+[ -e $JODY_W2_UART ] || exit_with_error "Device not found: '$JODY_W2_UART'"
+
+check_config_serial() {
+    local config_file=$1
+    local config_uart=$2
+    local config_baud=$3
+    local config_hci=$4
+
+    # Check and update bridge config if needed
+    if ! grep -q Serial=\"${config_uart}\" $config_file; then
+        sed -i -e "s~Serial=.*~Serial=\"${config_uart}\"~" $config_file
+    fi
+    if ! grep -q BAUD=${config_baud} $config_file; then
+        sed -i -e "s~BAUD=.*~BAUD=${config_baud}~" $config_file
+    fi
+    if ! grep -q BT_interface_name=\"${config_hci}\" $config_file; then
+        sed -i -e \
+            "s~BT_interface_name=.*~BT_interface_name=\"${config_hci}\"~" \
+            $config_file
+    fi
+}
+
+do_start() {
+    check_config_serial \
+        $MFGBRIDGE_CONF \
+        $JODY_W2_UART \
+        $JODY_W2_BAUD \
+        $JODY_W2_HCI && \
+    cd $(dirname $MFGBRIDGE) && \
+    start-stop-daemon -S -q -m -p $MFGBRIDGE_PID -b \
+        -x ./$(basename $MFGBRIDGE) --
+    hciattach -t 0 $JODY_W2_UART any $JODY_W2_BAUD flow && \
+    hciconfig $JODY_W2_HCI up && \
+    hciconfig $JODY_W2_HCI piscan
+}
+
+do_stop() {
+    start-stop-daemon -K -q -p $MFGBRIDGE_PID && \
+    rm -f $MFGBRIDGE_PID
+    hciconfig $JODY_W2_HCI down && \
+    killall -q hciattach
+}
+
+case "$1" in
+    start)
+        do_start
+        ;;
+    stop)
+        do_stop
+        ;;
+    restart)
+        do_stop
+        do_start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        ;;
+esac
+
+exit $?

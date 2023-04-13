@@ -1,0 +1,534 @@
+From 02e42f9beb7bbd81d6b94de30e352057574dc950 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 9 Jan 2019 10:52:21 +0100
+Subject: [PATCH] fix compilation issues
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ Makefile                                    | 12 +++++------
+ bsp/app/gpsd/Makefile                       |  3 +--
+ bsp/app/libpcap/Makefile                    |  4 ++--
+ cohda/app/llc/Makefile                      | 13 +++++++-----
+ cohda/app/llc/lib/Makefile                  | 10 ++++++----
+ cohda/app/llc/plugin/Makefile               |  3 ++-
+ cohda/app/llc/plugin/bridge/Makefile        |  8 +++++---
+ cohda/app/llc/plugin/cfg/Makefile           |  9 ++++++---
+ cohda/app/llc/plugin/cfg/dwarfpp/Makefile   |  3 ++-
+ cohda/app/llc/plugin/cfg/dwarfpp/parse_syms |  2 ++
+ cohda/app/llc/plugin/echo/Makefile          | 15 +++++++++-----
+ cohda/app/llc/plugin/mcap/Makefile          | 31 +++++++++++++++++------------
+ cohda/app/llc/plugin/rx/Makefile            |  1 +
+ cohda/app/llc/plugin/sec/Makefile           |  1 +
+ cohda/app/llc/plugin/simtdapi/Makefile      |  1 +
+ cohda/app/llc/plugin/tx/Makefile            |  1 +
+ cohda/app/llc/plugin/utc/Makefile           | 13 ++++++------
+ cohda/kernel/drivers/cohda/llc/Makefile     |  6 +++---
+ 18 files changed, 82 insertions(+), 54 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 9983a64..d728a94 100755
+--- a/Makefile
++++ b/Makefile
+@@ -15,7 +15,7 @@ TARGET_DIR_i686    ?=$(PWD)
+ KERNEL_SRC_X86_64 ?=/lib/modules/$(UNAME_R)/build
+ TARGET_DIR_X86_64 ?=$(PWD)
+ 
+-SUDO=sudo
++SUDO=
+ 
+ BOARD?=$(UNAME_M)
+ 
+@@ -129,8 +129,8 @@ libs-i686:
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=i686 clean     >> log_i686_build
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=i686 libLLC.so >> log_i686_build 
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=i686 install INSTALLDIR=$(TARGET_DIR_i686)/bin >> log_i686_build
+-	@echo sudo ldconfig $(TARGET_DIR_i686)/bin 
+-	@$(SUDO) ldconfig $(TARGET_DIR_i686)/bin 
++	@echo $(SUDO) ldconfig $(TARGET_DIR_i686)/bin
++	@$(SUDO) ldconfig $(TARGET_DIR_i686)/bin
+ 
+ libs-x86_64: 
+ 	@echo 
+@@ -138,8 +138,8 @@ libs-x86_64:
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=x86_64 clean     >> log_x86_64_build
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=x86_64 libLLC.so >> log_x86_64_build 
+ 	$(MAKE) -C $(LLC_LIB_DIR)  BOARD=x86_64 install INSTALLDIR=$(TARGET_DIR_X86_64)/bin >> log_x86_64_build
+-	@echo sudo  ldconfig $(TARGET_DIR_X86_64)/bin  	
+-	@$(SUDO) ldconfig $(TARGET_DIR_X86_64)/bin 
++	@echo $(SUDO)  ldconfig $(TARGET_DIR_X86_64)/bin
++	@$(SUDO) ldconfig $(TARGET_DIR_X86_64)/bin
+ 
+ libs-mk5: 
+ 	@echo 
+@@ -209,7 +209,7 @@ package: clean
+ 
+ 
+ $(KERNEL_SRC_i686)/Module.symvers:
+-	sudo apt-get install linux-headers-$(UNAME_R)
++	$(SUDO) apt-get install linux-headers-$(UNAME_R)
+ 
+ $(KERNEL_SRC_MK5)/Module.symvers:
+ 	@echo "Missing MK5 kernel in folder $(KERNEL_SRC_MK5)"
+diff --git a/bsp/app/gpsd/Makefile b/bsp/app/gpsd/Makefile
+index 065b618..af07303 100755
+--- a/bsp/app/gpsd/Makefile
++++ b/bsp/app/gpsd/Makefile
+@@ -40,8 +40,7 @@ endif
+ INSTALLDIR ?= /usr/local
+ _HOST      ?=
+ _PREFIX    ?= $(INSTALLDIR)/
+-SUDOPATH   := env "PATH=$(PATH)"
+-SUDO       ?= sudo -E $(SUDOPATH)
++SUDO       ?=
+ 
+ ifdef SDKTARGETSYSROOT
+ SYSROOT := sysroot=$(SDKTARGETSYSROOT)
+diff --git a/bsp/app/libpcap/Makefile b/bsp/app/libpcap/Makefile
+index 664f13c..b5e89b4 100755
+--- a/bsp/app/libpcap/Makefile
++++ b/bsp/app/libpcap/Makefile
+@@ -14,7 +14,7 @@ ifeq ($(BOARD),$(NATIVE))
+   INSTALLDIR ?= /usr
+   _HOST    ?= 
+   _PREFIX  ?= $(INSTALLDIR)/
+-  SUDO ?= sudo
++  SUDO ?=
+ else
+   _HOST      ?= $(patsubst %-,%,$(strip $(filter-out ccache,$(CROSS_COMPILE))))
+   INSTALLDIR ?= $(CURDIR)/../../../bsp/image/rootfs
+@@ -29,7 +29,7 @@ NAME=libpcap-1.8.1
+ SRC_TGZ=$(NAME).tar.gz
+ SRC_DIR=$(NAME)
+ JOBS=$(shell getconf _NPROCESSORS_ONLN)
+-SUDO ?= sudo
++SUDO ?=
+ 
+ # Needed by some toolchains
+ CONFIGURE_FLAGS ?=
+diff --git a/cohda/app/llc/Makefile b/cohda/app/llc/Makefile
+index 0d526f3..a9fd41d 100755
+--- a/cohda/app/llc/Makefile
++++ b/cohda/app/llc/Makefile
+@@ -15,6 +15,9 @@ else
+   EXTRA_CFLAGS += -O2
+ endif
+ 
++SUDO=
++SETCAP ?= $(shell which true)
++
+ # If using yocto/poky toolchain, use CC in environment
+ ifneq ($(TARGET_PREFIX),arm-poky-linux-gnueabi-)
+   CC := "$(CROSS_COMPILE)gcc"
+@@ -73,7 +76,7 @@ SUBDIRS ?= lib plugin
+ 
+ $(APP): $(SUBDIRS) $(LIBS) $(OBJS)
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
+-	sudo setcap cap_net_raw=eip $@
++	$(SUDO) $(SETCAP) cap_net_raw=eip $@
+ 
+ %.o: %.c
+ 	-@mkdir --parents $(shell dirname $(DEPDIR)/$*.d)
+@@ -139,16 +142,16 @@ clean:
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin
+-	sudo setcap cap_net_raw=eip $(INSTALLDIR)/opt/cohda/bin/$(APP)
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin
++	$(SUDO) $(SETCAP) cap_net_raw=eip $(INSTALLDIR)/opt/cohda/bin/$(APP)
+ 	for dir in $(SUBDIRS); do \
+ 		$(MAKE) -C $$dir $@ CROSS_COMPILE="$(CROSS_COMPILE)" BOARD=$(BOARD) INSTALLDIR=$(INSTALLDIR); \
+ 	done
+ 
+ $(BOARD):
+ ifneq (,$(findstring $(BOARD),mk5 bm1))
+-	env BOARD=$@ ARCH=arm CROSS_COMPILE="ccache arm-linux-gnueabihf-" $(MAKE)
++#	env BOARD=$@ ARCH=arm CROSS_COMPILE="ccache arm-linux-gnueabihf-" $(MAKE)
+ else ifneq (,$(findstring $(BOARD),nxpsharkfin lvtm))
+ 	env BOARD=$@ ARCH=arm CROSS_COMPILE="ccache arm-buildroot-linux-gnueabihf-" $(MAKE)
+ else ifneq (,$(findstring $(BOARD),dgm qnx qnx-arm sabrelite mq5))
+diff --git a/cohda/app/llc/lib/Makefile b/cohda/app/llc/lib/Makefile
+index 51bb8b2..aa6cdd2 100755
+--- a/cohda/app/llc/lib/Makefile
++++ b/cohda/app/llc/lib/Makefile
+@@ -1,6 +1,8 @@
+ APP  = libLLC.so
+ all: $(APP)
+ 
++SUDO=
++
+ # Comment/uncomment the following line to disable/enable debugging
+ #DEBUG = y
+ ifeq ($(DEBUG),y)
+@@ -65,7 +67,7 @@ EXTRA_CFLAGS += -I. \
+                 -I$(PCAP_LIB_DIR) \
+                 -D__LLC__ \
+ 
+-LDFLAGS += -L$(PCAP_LIB_DIR) -lpcap
++LDFLAGS += -lpcap
+ 
+ LIBS +=
+ 
+@@ -83,7 +85,7 @@ DEPS   = $(SRCS:%.c=$(DEPDIR)/%.d)
+ $(APP): $(PCAP_APP_BIN) $(LIBS) $(OBJS)
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
+ 	@cp $@ ../
+-	@cp $(PCAP_APP_BIN) ./
++#	@cp $(PCAP_APP_BIN) ./
+ 
+ %.o: %.c
+ 	-@mkdir --parents $(shell dirname $(DEPDIR)/$*.d)
+@@ -112,8 +114,8 @@ endif
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin
+ 
+ .PHONY: clean install
+ 
+diff --git a/cohda/app/llc/plugin/Makefile b/cohda/app/llc/plugin/Makefile
+index 4039f6a..13f2ef5 100755
+--- a/cohda/app/llc/plugin/Makefile
++++ b/cohda/app/llc/plugin/Makefile
+@@ -50,7 +50,8 @@ LDFLAGS += -L$(CURDIR)/../lib -lLLC -lpcap
+ LIBS = $(SRCS:.c=.so)
+ APP  = plugins
+ 
+-SUBDIRS ?= calcw capture dmesg utc reg  stats cal dbg mcap count status error txqueue rxphylast txphylast config sec cfg  cbrmon version simtdapi temp tx rx powerdet tsf flush rssical echo bridge 
++#SUBDIRS ?= calcw capture dmesg utc reg  stats cal dbg mcap count status error txqueue rxphylast txphylast config sec cfg  cbrmon version simtdapi temp tx rx powerdet tsf flush rssical echo bridge 
++SUBDIRS ?= calcw capture dmesg utc reg cal dbg mcap count status error txqueue rxphylast txphylast config sec cbrmon version simtdapi temp tx rx powerdet tsf flush rssical echo bridge
+ DEPDIR = .deps
+ DEPS   = $(SRCS:%.c=$(DEPDIR)/%.d)
+ 
+diff --git a/cohda/app/llc/plugin/bridge/Makefile b/cohda/app/llc/plugin/bridge/Makefile
+index 7dff639..4acd477 100755
+--- a/cohda/app/llc/plugin/bridge/Makefile
++++ b/cohda/app/llc/plugin/bridge/Makefile
+@@ -1,13 +1,15 @@
+ APP = llc-bridge.so
+ all: $(APP)
+ 
++SUDO=
++
+ # Comment/uncomment the following line to disable/enable debugging
+ #DEBUG = y
+ ifeq ($(DEBUG),y)
+   # "-O" is needed to expand inlines
+   EXTRA_CFLAGS += -O -g -DDEBUG
+ else
+-  EXTRA_CFLAGS += -O2
++  EXTRA_CFLAGS += -O2 -Wno-unused-variable -Wno-unused-but-set-variable
+ endif
+ 
+ # If using yocto/poky toolchain, use CC in environment
+@@ -83,6 +85,6 @@ clean:
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin/plugin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
+ 
+diff --git a/cohda/app/llc/plugin/cfg/Makefile b/cohda/app/llc/plugin/cfg/Makefile
+index 052f936..cfb8c9f 100755
+--- a/cohda/app/llc/plugin/cfg/Makefile
++++ b/cohda/app/llc/plugin/cfg/Makefile
+@@ -1,13 +1,16 @@
+ APP = llc-cfg.so
+ all: $(APP)
+ 
++SUDO=
++
+ # Comment/uncomment the following line to disable/enable debugging
+ #DEBUG = y
+ ifeq ($(DEBUG),y)
+   # "-O" is needed to expand inlines
+   EXTRA_CFLAGS += -O0 -ggdb3 -DDEBUG
+ else
+-  EXTRA_CFLAGS += -O2 -ggdb3
++#  EXTRA_CFLAGS += -O2 -ggdb3
++  EXTRA_CFLAGS += -O -ggdb3
+ endif
+ 
+ # If using yocto/poky toolchain, use CC in environment
+@@ -85,8 +88,8 @@ clean:
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin/plugin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
+ 
+ dwarfpp.c: dwarfpp-generated.c
+ 	cp dwarfpp/dwarfpp.c ./$@
+diff --git a/cohda/app/llc/plugin/cfg/dwarfpp/Makefile b/cohda/app/llc/plugin/cfg/dwarfpp/Makefile
+index c5c6ebe..e09bbbf 100755
+--- a/cohda/app/llc/plugin/cfg/dwarfpp/Makefile
++++ b/cohda/app/llc/plugin/cfg/dwarfpp/Makefile
+@@ -16,7 +16,8 @@ else
+   LFLAGS+= -ldl
+ endif
+ 
+-CFLAGS+= -Wall -Werror -ggdb3 -O0 -I../../../../../kernel/include
++#CFLAGS+= -Wall -Werror -ggdb3 -O0 -I../../../../../kernel/include
++CFLAGS+= -Wall -ggdb3 -O -I../../../../../kernel/include
+ 
+ clean:
+ 	rm -f *.o test dwarfpp-generated.* AutoMakefile
+diff --git a/cohda/app/llc/plugin/cfg/dwarfpp/parse_syms b/cohda/app/llc/plugin/cfg/dwarfpp/parse_syms
+index 55f0d27..190a068 100755
+--- a/cohda/app/llc/plugin/cfg/dwarfpp/parse_syms
++++ b/cohda/app/llc/plugin/cfg/dwarfpp/parse_syms
+@@ -1,5 +1,7 @@
+ #!/usr/bin/perl -w
+ 
++use lib '.';
++
+ use strict;
+ 
+ use Getopt::Long;
+diff --git a/cohda/app/llc/plugin/echo/Makefile b/cohda/app/llc/plugin/echo/Makefile
+index 6443d81..51c2309 100755
+--- a/cohda/app/llc/plugin/echo/Makefile
++++ b/cohda/app/llc/plugin/echo/Makefile
+@@ -1,13 +1,16 @@
+ APP = llc-echo.so
+ all: $(APP)
+ 
++SUDO=
++
+ # Comment/uncomment the following line to disable/enable debugging
+ #DEBUG = y
+ ifeq ($(DEBUG),y)
+   # "-O" is needed to expand inlines
+   EXTRA_CFLAGS += -O -g -DDEBUG
+ else
+-  EXTRA_CFLAGS += -O2
++#  EXTRA_CFLAGS += -O2
++  EXTRA_CFLAGS += -O2 -Wno-unused-variable -Wno-unused-but-set-variable
+ endif
+ 
+ # gpsd
+@@ -56,6 +59,8 @@ INSTALLDIR ?= ~
+ 
+ CFLAGS += -Werror -MD -shared -fPIC \
+          -fdata-sections -ffunction-sections
++#CFLAGS += -MD -shared -fPIC \
++#         -fdata-sections -ffunction-sections
+ 
+ EXTRA_CFLAGS += -I. \
+                 -I../simtdapi \
+@@ -66,7 +71,7 @@ EXTRA_CFLAGS += -I. \
+                 -I$(COHDA_INCLUDE_DIR) \
+                 -D__LLC__
+ 
+-LDFLAGS += -L$(GPSD_APP_DIR) -lgps \
++LDFLAGS += -lgps \
+            -L$(CURDIR)/../../lib -lLLC -lpcap
+ 
+ LIBS +=
+@@ -82,7 +87,7 @@ $(APP): $(LIBS) $(OBJS)
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
+ 	@cp $@ ../
+ 
+-$(OBJS): $(GPSD_APP_BIN)
++$(OBJS):
+ 
+ %.o: %.c
+ 	-@mkdir --parents $(shell dirname $(DEPDIR)/$*.d)
+@@ -105,6 +110,6 @@ clean:
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin/plugin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
+ 
+diff --git a/cohda/app/llc/plugin/mcap/Makefile b/cohda/app/llc/plugin/mcap/Makefile
+index 0edd608..e2d0984 100755
+--- a/cohda/app/llc/plugin/mcap/Makefile
++++ b/cohda/app/llc/plugin/mcap/Makefile
+@@ -1,6 +1,8 @@
+ NATIVE = $(shell uname --machine)
+ BOARD ?= $(NATIVE)
+ 
++SUDO=
++
+ APP = mcap.so
+ all: $(APP)
+ 
+@@ -41,13 +43,14 @@ ifneq (,$(findstring $(BOARD),qnx qnx-arm qnx-x86 sabrelite mq5))
+   COHDA_INCLUDE_DIR = ../../../../qnx/include
+ 
+ else ifneq ($(BOARD),$(NATIVE))
+-  KERNELDIR         ?= $(COMMON_DIR)/bsp/kernel/linux-imx
+-  COHDA_INCLUDE_DIR ?= $(COMMON_DIR)/cohda/kernel/include
+-  ROOTFS_DIR        ?= $(COMMON_DIR)/bsp/image/rootfs
+-  LIBPCAP_DIR       = $(COMMON_DIR)/bsp/app/libpcap/$(BOARD)/
+-  LIBPCAP_INC       = $(LIBPCAP_DIR)/
+-  LIBPCAP_BIN       = $(LIBPCAP_DIR)/libpcap.a
+-  LDFLAGS          += -L$(LIBPCAP_DIR)/ -lpcap
++#  KERNELDIR         ?= $(COMMON_DIR)/bsp/kernel/linux-imx
++#  COHDA_INCLUDE_DIR ?= $(COMMON_DIR)/cohda/kernel/include
++#  ROOTFS_DIR        ?= $(COMMON_DIR)/bsp/image/rootfs
++#  LIBPCAP_DIR       = $(COMMON_DIR)/bsp/app/libpcap/$(BOARD)/
++#  LIBPCAP_INC       = $(LIBPCAP_DIR)/
++#  LIBPCAP_BIN       = $(LIBPCAP_DIR)/libpcap.a
++#  LDFLAGS          += -L$(LIBPCAP_DIR)/ -lpcap
++  LDFLAGS          += -lpcap
+   CFLAGS            = -nostartfiles
+ 
+ else
+@@ -68,10 +71,12 @@ else
+     CC := "$(CROSS_COMPILE)gcc"
+     CC := $(subst $\",,$(CC))
+   endif
+-  LIBPCAP_DIR       = $(COMMON_DIR)/bsp/app/libpcap/$(BOARD)
+-  LIBPCAP_INC       = $(LIBPCAP_DIR)/
+-  LIBPCAP_BIN       = $(LIBPCAP_DIR)/libpcap.a
+-  LDFLAGS          += -L$(LIBPCAP_DIR)/ -lpcap
++#  LIBPCAP_DIR       = $(COMMON_DIR)/bsp/app/libpcap/$(BOARD)
++#  LIBPCAP_INC       = $(LIBPCAP_DIR)/
++#  LIBPCAP_BIN       = $(LIBPCAP_DIR)/libpcap.a
++#  LDFLAGS          += -L$(LIBPCAP_DIR)/ -lpcap
++  LIBPCAP_BIN       =
++  LDFLAGS          += -lpcap
+ endif
+ 
+ COHDA_INCLUDE_DIR ?= ../../kernel/include
+@@ -114,5 +119,5 @@ else
+ endif
+ 
+ install: $(APP) $(LIBS)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin/plugin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
+diff --git a/cohda/app/llc/plugin/rx/Makefile b/cohda/app/llc/plugin/rx/Makefile
+index f993eac..d3b8080 100755
+--- a/cohda/app/llc/plugin/rx/Makefile
++++ b/cohda/app/llc/plugin/rx/Makefile
+@@ -58,6 +58,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/sec/Makefile b/cohda/app/llc/plugin/sec/Makefile
+index 492dc69..5333146 100755
+--- a/cohda/app/llc/plugin/sec/Makefile
++++ b/cohda/app/llc/plugin/sec/Makefile
+@@ -58,6 +58,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/simtdapi/Makefile b/cohda/app/llc/plugin/simtdapi/Makefile
+index 5f738a0..2216635 100755
+--- a/cohda/app/llc/plugin/simtdapi/Makefile
++++ b/cohda/app/llc/plugin/simtdapi/Makefile
+@@ -59,6 +59,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/tx/Makefile b/cohda/app/llc/plugin/tx/Makefile
+index ef341fb..83366db 100755
+--- a/cohda/app/llc/plugin/tx/Makefile
++++ b/cohda/app/llc/plugin/tx/Makefile
+@@ -58,6 +58,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/utc/Makefile b/cohda/app/llc/plugin/utc/Makefile
+index 010a8d5..36f0278 100755
+--- a/cohda/app/llc/plugin/utc/Makefile
++++ b/cohda/app/llc/plugin/utc/Makefile
+@@ -1,6 +1,8 @@
+ APP = llc-utc.so
+ all: $(APP)
+ 
++SUDO=
++
+ # Comment/uncomment the following line to disable/enable debugging
+ #DEBUG = y
+ ifeq ($(DEBUG),y)
+@@ -61,10 +63,9 @@ CFLAGS += -Wall -Werror -MD -shared -fPIC \
+ EXTRA_CFLAGS += -I. \
+                 -I../.. \
+                 -I../../../../kernel/include \
+-                -I$(GPSD_APP_DIR) \
+                 -D__LLC__
+ 
+-LDFLAGS += -L$(GPSD_APP_DIR) -lgps -lm \
++LDFLAGS += -lgps -lm \
+            -L$(CURDIR)/../../lib -lLLC -lpcap
+ 
+ LIBS +=
+@@ -80,7 +81,7 @@ $(APP): $(LIBS) $(OBJS)
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
+ 	@cp $@ ../
+ 
+-$(OBJS): $(GPSD_APP_BIN)
++$(OBJS):
+ 
+ %.o: %.c
+ 	-@mkdir --parents $(shell dirname $(DEPDIR)/$*.d)
+@@ -93,7 +94,7 @@ ifneq ($(TARGET_PREFIX),arm-poky-linux-gnueabi-)
+ 	make -C $(GPSD_SRC_DIR) BOARD=$(BOARD)
+ endif
+ 	rm -f $(GPSD_APP_DIR)
+-	ln -s $(GPSD_SRC_DIR)/$(BOARD) $(GPSD_APP_DIR)
++#	ln -s $(GPSD_SRC_DIR)/$(BOARD) $(GPSD_APP_DIR)
+ 	test -f $@
+ 
+ clean:
+@@ -103,6 +104,6 @@ clean:
+ 	rm -rf $(DEPDIR)
+ 
+ install: $(APP)
+-	sudo install -d $(INSTALLDIR)/opt/cohda/bin/plugin
+-	sudo install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -d $(INSTALLDIR)/opt/cohda/bin/plugin
++	$(SUDO) install -c $(APP) $(INSTALLDIR)/opt/cohda/bin/plugin
+ 
+diff --git a/cohda/kernel/drivers/cohda/llc/Makefile b/cohda/kernel/drivers/cohda/llc/Makefile
+index 4916128..86ef7eb 100755
+--- a/cohda/kernel/drivers/cohda/llc/Makefile
++++ b/cohda/kernel/drivers/cohda/llc/Makefile
+@@ -10,9 +10,9 @@ endif
+ 
+ BOARD ?= $(shell uname -m)
+ 
+-EXTRA_CFLAGS += -I$(PWD) \
+-                -I$(PWD)/.. \
+-                -I$(PWD)/../../../include \
++EXTRA_CFLAGS += -I$(M) \
++                -I$(M)/.. \
++                -I$(M)/../../../include \
+                 -D__LLC__ -DBOARD_$(shell echo $(BOARD) | tr a-z A-Z)
+ 
+ TARGET = cw-llc
+-- 
+2.11.0
+

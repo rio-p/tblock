@@ -1,0 +1,31 @@
+From 985d8145dc0a1d5c22299eb75ae53beb9ddaaefe Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Tue, 21 Aug 2018 16:41:07 +0200
+Subject: [PATCH] add compile time assertions for LLCListItem structure
+
+Signed-off-by: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+---
+ cohda/kernel/drivers/cohda/llc/llc-msg.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/cohda/kernel/drivers/cohda/llc/llc-msg.c b/cohda/kernel/drivers/cohda/llc/llc-msg.c
+index 41f24e3..ffcc842 100755
+--- a/cohda/kernel/drivers/cohda/llc/llc-msg.c
++++ b/cohda/kernel/drivers/cohda/llc/llc-msg.c
+@@ -88,6 +88,13 @@ int LLC_MsgSetup (struct LLCDriver *pDrv)
+   d_fnstart(D_VERBOSE, NULL, "(pDrv %p)\n", pDrv);
+   d_assert(pDrv != NULL);
+ 
++  BUILD_BUG_ON_MSG(sizeof(struct LLCListItem) < sizeof(struct LLCMsgCtx),
++                   "tLLCMsgCtx too big!");
++  BUILD_BUG_ON_MSG(sizeof(struct LLCListItem) < sizeof(struct LLCOutCtx),
++                   "tLLCOutCtx too big!");
++  BUILD_BUG_ON_MSG(sizeof(struct LLCListItem) < sizeof(struct LLCInCtx),
++                   "tLLCInCtx too big!");
++
+   if (sizeof(struct LLCListItem) < sizeof(struct LLCMsgCtx))
+   {
+     d_error(D_CRIT, NULL, "tLLCMsgCtx too big! %zd:%zd\n",
+-- 
+2.7.4
+

@@ -1,0 +1,95 @@
+From 415baab056802c8cd74e0a6bdfdf0c1f313ee424 Mon Sep 17 00:00:00 2001
+From: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Date: Tue, 13 Sep 2016 10:45:23 +0200
+Subject: [PATCH] use sdio interface
+
+---
+ demo/demo_bt_oob.c |  2 +-
+ demo/demo_p2p.c    | 10 +++++-----
+ demo/demo_reader.c |  8 ++++----
+ demo/demo_text.c   |  6 +++---
+ 4 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/demo/demo_bt_oob.c b/demo/demo_bt_oob.c
+index b552708..42ac59b 100755
+--- a/demo/demo_bt_oob.c
++++ b/demo/demo_bt_oob.c
+@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
+     mrvl_nci_status_t             ret;
+     mrvl_nci_transport_config_t   config =
+     {
+-        .transport      = MRVL_NCI_TRANSPORT_UART,       // UART or TTY based
++        .transport      = MRVL_NCI_TRANSPORT_SDIO,       // UART or TTY based
+         .hci_mux        = true,                         // NCI packets in HCI BT packets
+         .u              = {
+             .tty = {
+diff --git a/demo/demo_p2p.c b/demo/demo_p2p.c
+index 7c78de5..9def119 100755
+--- a/demo/demo_p2p.c
++++ b/demo/demo_p2p.c
+@@ -105,14 +105,14 @@ int main(int argc, const char *argv[])
+     mrvl_nci_status_t             ret;
+     mrvl_nci_transport_config_t   config =
+     {
+-        .transport      = MRVL_NCI_TRANSPORT_UART,      // UART or TTY based
++        .transport      = MRVL_NCI_TRANSPORT_SDIO,      // UART or TTY based
+         .hci_mux        = true,                         // NCI packets in HCI BT packets
+         .u              = {
+             .tty = {
+-                .dev            = "/dev/ttyUSB0",       // TTY
+-                .baudrate       = 115200,               // Baudrate
+-                .mode           = MRVL_NCI_TTY_MODE_CHAR,
+-            }
++                .dev            = "/dev/mnfcchar0",
++                .baudrate       = 115200,
++                .mode           = MRVL_NCI_TTY_MODE_PACKET,
++               }
+         }
+     };
+ 
+diff --git a/demo/demo_reader.c b/demo/demo_reader.c
+index 2df6f74..e881c4f 100755
+--- a/demo/demo_reader.c
++++ b/demo/demo_reader.c
+@@ -67,13 +67,13 @@ int main(void)
+     mrvl_nci_status_t             ret;
+     mrvl_nci_transport_config_t   config =
+     {
+-        .transport      = MRVL_NCI_TRANSPORT_UART,  // UART or TTY based
+-        .hci_mux        = false,                    // NCI packets in HCI BT packets
++        .transport      = MRVL_NCI_TRANSPORT_SDIO,  // UART or TTY based
++        .hci_mux        = true,                    // NCI packets in HCI BT packets
+         .u              = {
+             .tty = {
+-                .dev            = "/dev/ttyUSB0",       // TTY
++                .dev            = "/dev/mnfcchar0",     // TTY
+                 .baudrate       = 115200,               // Baudrate
+-                .mode           = MRVL_NCI_TTY_MODE_CHAR,
++                .mode           = MRVL_NCI_TTY_MODE_PACKET,
+             }
+         }
+     };
+diff --git a/demo/demo_text.c b/demo/demo_text.c
+index a29613d..8cd29c6 100755
+--- a/demo/demo_text.c
++++ b/demo/demo_text.c
+@@ -93,13 +93,13 @@ int main(void)
+     mrvl_nci_status_t             ret;
+     mrvl_nci_transport_config_t   config =
+     {
+-        .transport      = MRVL_NCI_TRANSPORT_UART,
++        .transport      = MRVL_NCI_TRANSPORT_SDIO,
+         .hci_mux        = true,
+         .u              = {
+             .tty = {
+-                .dev            = "/dev/ttyUSB0",
++                .dev            = "/dev/mnfcchar0",
+                 .baudrate       = 115200,
+-                .mode           = MRVL_NCI_TTY_MODE_CHAR,
++                .mode           = MRVL_NCI_TTY_MODE_PACKET,
+             }
+         }
+     };
+-- 
+2.9.3
+

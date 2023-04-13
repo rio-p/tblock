@@ -1,0 +1,22 @@
+From 262725e9eab05cef090c9781073c37de0500bfa7 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 1 Aug 2018 12:03:29 +0200
+Subject: [PATCH 1/2] defconfigs: brcmfmac: enable debug
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ defconfigs/brcmfmac | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/defconfigs/brcmfmac b/defconfigs/brcmfmac
+index 0e940ce..24114d3 100644
+--- a/defconfigs/brcmfmac
++++ b/defconfigs/brcmfmac
+@@ -6,3 +6,4 @@ CPTCFG_BRCMFMAC=m
+ CPTCFG_BRCMFMAC_SDIO=y
+ CPTCFG_BRCMFMAC_USB=y
+ CPTCFG_BRCMFMAC_PCIE=y
++CPTCFG_BRCMDBG=y
+-- 
+2.11.0
+

@@ -1,0 +1,27 @@
+From f8b1b1617d7cabfbeac62483bc8f09fd8fbc4e60 Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Mon, 24 Apr 2017 16:53:28 +0200
+Subject: [PATCH] disable usb suspend
+
+Signed-off-by: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+---
+ wlan_src/mlinux/moal_usb.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/wlan_src/mlinux/moal_usb.c b/wlan_src/mlinux/moal_usb.c
+index 2870f0f..a6fb425 100755
+--- a/wlan_src/mlinux/moal_usb.c
++++ b/wlan_src/mlinux/moal_usb.c
+@@ -774,6 +774,9 @@ woal_usb_suspend(struct usb_interface *intf, pm_message_t message)
+ 	int i;
+ 
+ 	ENTER();
++//./ WORKAROUND: disable usb suspend until Marvell fixes autosuspend problem   
++	LEAVE();
++	return MLAN_STATUS_FAILURE;
+ 
+ 	if (!cardp || !cardp->phandle) {
+ 		PRINTM(MERROR, "Card or moal_handle structure is not valid\n");
+-- 
+2.7.4
+

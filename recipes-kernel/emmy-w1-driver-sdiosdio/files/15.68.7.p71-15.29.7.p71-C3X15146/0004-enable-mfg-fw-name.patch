@@ -1,0 +1,28 @@
+From bd99f6b71f97beeeb2029e2cb1f1bfc70dfdba60 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 16:14:56 +0200
+Subject: [PATCH 4/6] enable mfg fw name
+
+Enable explicitly set FW to be used in manufacturing mode.
+---
+ wlan_src/mlinux/moal_main.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index c77c345..2206e50 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -966,10 +966,6 @@ woal_update_drv_tbl(moal_handle *handle, int drv_mode_local)
+ 	handle->drv_mode.bss_attr = bss_tbl;
+ 	if (fw_name) {
+ 		handle->drv_mode.fw_name = fw_name;
+-#ifdef MFG_CMD_SUPPORT
+-		if (mfg_mode == MLAN_INIT_PARA_ENABLED)
+-			fw_name = NULL;
+-#endif
+ 	} else {
+ #if defined(UAP_SUPPORT) && defined(STA_SUPPORT)
+ 		if (handle->card_type == CARD_TYPE_SD8777)
+-- 
+2.1.4
+

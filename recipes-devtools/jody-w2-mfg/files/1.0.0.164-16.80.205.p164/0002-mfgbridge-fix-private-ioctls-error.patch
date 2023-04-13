@@ -1,0 +1,25 @@
+From 4c446f1d53f27c9810537d4945e0f55d1fca71cf Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Tue, 1 Oct 2019 13:00:09 +0200
+Subject: [PATCH] mfgbridge2: fix private ioctls error
+
+---
+ Bridge/bridge_linux_0.1.0.43/drvwrapper/drv_wrapper.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Bridge/bridge_linux_0.1.0.43/drvwrapper/drv_wrapper.c b/Bridge/bridge_linux_0.1.0.43/drvwrapper/drv_wrapper.c
+index 3e4e2d5..0885287 100755
+--- a/Bridge/bridge_linux_0.1.0.43/drvwrapper/drv_wrapper.c
++++ b/Bridge/bridge_linux_0.1.0.43/drvwrapper/drv_wrapper.c
+@@ -67,7 +67,7 @@
+ 
+ #define SPEC_NFC_EVENT 0xf
+ 
+-static int ethio_flag = 0;
++static int ethio_flag = 1;
+ 
+ /** Private command structure */
+ typedef struct eth_priv_cmd
+-- 
+2.7.4
+

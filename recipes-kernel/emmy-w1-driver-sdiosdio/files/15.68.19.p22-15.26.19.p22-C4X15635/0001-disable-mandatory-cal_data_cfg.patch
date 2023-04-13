@@ -1,0 +1,29 @@
+From d5817c3cdbc719f6da5e7764dcc8513f2ee5deaf Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 17 Apr 2019 15:42:16 +0200
+Subject: [PATCH 1/2] disable mandatory cal_data_cfg
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlinux/moal_main.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 2f307b7..e3ce908 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -2621,11 +2621,6 @@ woal_init_fw_dpc(moal_handle *handle)
+ 				goto done;
+ 			}
+ 		}
+-	} else if (!cal_data_cfg) {
+-		PRINTM(MERROR,
+-		       "Please add cal_data_cfg for 8887/8977/8997/8987/9098/8978\n");
+-		ret = MLAN_STATUS_FAILURE;
+-		goto done;
+ 	}
+ 	if (handle->user_data) {
+ 		param.pcal_data_buf = (t_u8 *)handle->user_data->data;
+-- 
+2.11.0
+

@@ -1,0 +1,69 @@
+From c3b708405e8252089549b974bb3913e00535dcd5 Mon Sep 17 00:00:00 2001
+From: Fabiano Ferronato <fabiano.ferronato@u-blox.com>
+Date: Fri, 29 Mar 2019 13:24:12 +0100
+Subject: [PATCH] switch from vfs_write() to kernel_write() 
+
+---
+ host_bcmdhd_src/bcmdhd/dhd_linux.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/host_bcmdhd_src/bcmdhd/dhd_linux.c b/host_bcmdhd_src/bcmdhd/dhd_linux.c
+index a1fd062..a542197 100644
+--- a/dhd_linux.c
++++ b/dhd_linux.c
+@@ -12151,7 +12151,12 @@ write_to_file(dhd_pub_t *dhd, uint8 *buf, int size)
+ 	}
+ 
+ 	/* Write buf to file */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,14)
+ 	ret = vfs_write(fp, buf, size, &pos);
++#else
++       ret = kernel_write(fp, buf, size, &pos);
++#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4,14,14) */
++
+ 	if (ret < 0) {
+ 		DHD_ERROR(("write file error, err = %d\n", ret));
+ 		goto exit;
+@@ -13783,7 +13788,12 @@ do_dhd_log_dump(dhd_pub_t *dhdp)
+ 		goto exit;
+ 	}
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,14)
+ 	ret = vfs_write(fp, common_info, strlen(common_info), &pos);
++#else
++	ret = kernel_write(fp, common_info, strlen(common_info), &pos);
++#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4,14,14) */
++
+ 	if (ret < 0) {
+ 		DHD_ERROR(("write file error, err = %d\n", ret));
+ 		goto exit;
+@@ -13794,7 +13804,12 @@ do_dhd_log_dump(dhd_pub_t *dhdp)
+ 		size = (unsigned int)(dhdp->dld_buf.present - dhdp->dld_buf.front);
+ 	}
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,14) 
+ 	ret = vfs_write(fp, dhdp->dld_buf.buffer, size, &pos);
++#else
++	ret = kernel_write(fp, dhdp->dld_buf.buffer, size, &pos);
++#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4,14,14) */
++
+ 	if (ret < 0) {
+ 		DHD_ERROR(("write file error, err = %d\n", ret));
+ 		goto exit;
+@@ -14537,7 +14552,13 @@ dhd_write_file(const char *filepath, char *buf, int buf_len)
+ 		ret = BCME_ERROR;
+ 	} else {
+ 		if (fp->f_mode & FMODE_WRITE) {
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,14)
+ 			ret = vfs_write(fp, buf, buf_len, &fp->f_pos);
++#else
++			ret = kernel_write(fp, buf, buf_len, &fp->f_pos);
++#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4,14,14) */
++
+ 			if (ret < 0) {
+ 				DHD_ERROR(("%s: Couldn't write file '%s'\n",
+ 					__FUNCTION__, filepath));
+-- 
+2.11.0
+

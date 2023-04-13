@@ -1,0 +1,34 @@
+From 937107efd7c733c149e08262a81d90293165b06d Mon Sep 17 00:00:00 2001
+From: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Date: Tue, 15 May 2018 09:43:28 +0200
+Subject: [PATCH] add sanity check for missing NONPLUG_SUPPORT define
+
+---
+ drvwrapper/drv_wrapper.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+ mode change 100755 => 100644 drvwrapper/drv_wrapper.c
+
+diff --git a/drvwrapper/drv_wrapper.c b/drvwrapper/drv_wrapper.c
+old mode 100755
+new mode 100644
+index c1d6ce8..8e0e70c
+--- a/drvwrapper/drv_wrapper.c
++++ b/drvwrapper/drv_wrapper.c
+@@ -5,6 +5,14 @@
+  *  Copyright (C) 2009-2010, Marvell International Ltd.
+  *  All Rights Reserved
+  */
++#define STATIC_ASSERT(COND,MSG) typedef char static_assertion_##MSG[(COND)?1:-1]
++#ifdef NONPLUG_SUPPORT
++ #define IS_NONPLUG_PRESENT 1
++#else
++ #define IS_NONPLUG_PRESENT 0
++#endif
++
++STATIC_ASSERT(IS_NONPLUG_PRESENT,control_NONPLUG_not_defined);
+ 
+ #include <stdio.h>
+ #include <stdarg.h>
+--
+libgit2 0.26.0
+

@@ -1,0 +1,149 @@
+From 54f26ef2a0ad6e96582de77b22d1d3d5b1117288 Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Thu, 23 Aug 2018 09:22:19 +0200
+Subject: [PATCH] adapt to automatic calculation of the private user data area
+
+Signed-off-by: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+---
+ cohda/kernel/drivers/cohda/llc/list.h     | 50 +++++++++++++++++++++++++++++++
+ cohda/kernel/drivers/cohda/llc/llc-list.c |  1 -
+ cohda/kernel/drivers/cohda/llc/llc-list.h | 15 +++++-----
+ cohda/kernel/drivers/cohda/llc/llc-msg.h  |  3 +-
+ 4 files changed, 58 insertions(+), 11 deletions(-)
+ create mode 100755 cohda/kernel/drivers/cohda/llc/list.h
+
+diff --git a/cohda/kernel/drivers/cohda/llc/list.h b/cohda/kernel/drivers/cohda/llc/list.h
+new file mode 100755
+index 0000000..51e2a1d
+--- /dev/null
++++ b/cohda/kernel/drivers/cohda/llc/list.h
+@@ -0,0 +1,50 @@
++/**
++ * @addtogroup cohda_llc LLC module
++ * @{
++ *
++ * @addtogroup cohda_llc_intern LLC internals
++ * @{
++ *
++ * @file
++ * LLC: Kernel list functionality
++ */
++
++//------------------------------------------------------------------------------
++// Copyright (c) 2018 Cohda Wireless Pty Ltd
++//------------------------------------------------------------------------------
++
++#ifndef __DRIVER__COHDA__LLC__LIST_H_
++#define __DRIVER__COHDA__LLC__LIST_H_
++#ifdef __KERNEL__
++
++//------------------------------------------------------------------------------
++// Included headers
++//------------------------------------------------------------------------------
++#include <linux/list.h>
++
++//------------------------------------------------------------------------------
++// Macros & Constants
++//------------------------------------------------------------------------------
++
++//------------------------------------------------------------------------------
++// Type definitions
++//------------------------------------------------------------------------------
++
++/// Wrap up the linux free list structure
++typedef struct LLCList
++{
++  /// Next, Prev pointers
++  struct list_head List;
++} tLLCList;
++
++//------------------------------------------------------------------------------
++// Function declarations
++//------------------------------------------------------------------------------
++
++#else
++#error This file should not be included from user space.
++#endif // #ifdef __KERNEL__
++#endif // #ifndef __DRIVER__COHDA__LLC__LLC_LIST_H_
++/**
++ * @}
++ */
+diff --git a/cohda/kernel/drivers/cohda/llc/llc-list.c b/cohda/kernel/drivers/cohda/llc/llc-list.c
+index 6efbd49..9a3c76b 100755
+--- a/cohda/kernel/drivers/cohda/llc/llc-list.c
++++ b/cohda/kernel/drivers/cohda/llc/llc-list.c
+@@ -16,7 +16,6 @@
+ //------------------------------------------------------------------------------
+ // Included headers
+ //------------------------------------------------------------------------------
+-#include "llc-list.h"
+ #include "llc-internal.h"
+ 
+ #define D_SUBMODULE LLC_List
+diff --git a/cohda/kernel/drivers/cohda/llc/llc-list.h b/cohda/kernel/drivers/cohda/llc/llc-list.h
+index 0d0582a..f6c05a9 100755
+--- a/cohda/kernel/drivers/cohda/llc/llc-list.h
++++ b/cohda/kernel/drivers/cohda/llc/llc-list.h
+@@ -23,6 +23,8 @@
+ #include <linux/semaphore.h>
+ #include <linux/list.h>
+ 
++#include "list.h"
++#include "llc-msg.h"
+ //------------------------------------------------------------------------------
+ // Macros & Constants
+ //------------------------------------------------------------------------------
+@@ -67,16 +69,11 @@
+ // Type definitions
+ //------------------------------------------------------------------------------
+ 
++#define MAXVALUE(a,b) (((a)>(b))?(a):(b))
++
+ // forward decl(s)
+ struct LLCDriver;
+ 
+-/// Wrap up the linux free list structure
+-typedef struct LLCList
+-{
+-  /// Next, Prev pointers
+-  struct list_head List;
+-} tLLCList;
+-
+ /// Generic LLCListItem
+ typedef struct LLCListItem
+ {
+@@ -89,7 +86,9 @@ typedef struct LLCListItem
+   /// Return code
+   int16_t Ret;
+   /// Private user data area;
+-  uint32_t Priv[40];
++  uint32_t Priv[MAXVALUE(MAXVALUE(sizeof(struct LLCMsgCtx), 
++                                  sizeof(struct LLCInCtx)), 
++                                  sizeof(struct LLCOutCtx))];
+ } tLLCListItem;
+ 
+ /// LLC pool of entries
+diff --git a/cohda/kernel/drivers/cohda/llc/llc-msg.h b/cohda/kernel/drivers/cohda/llc/llc-msg.h
+index b6951f9..205d4d8 100755
+--- a/cohda/kernel/drivers/cohda/llc/llc-msg.h
++++ b/cohda/kernel/drivers/cohda/llc/llc-msg.h
+@@ -24,7 +24,7 @@
+ #include <linux/semaphore.h>
+ #include <linux/workqueue.h>
+ 
+-#include "llc-list.h"
++#include "list.h"
+ #include "llc-internal.h"
+ 
+ //------------------------------------------------------------------------------
+@@ -125,7 +125,6 @@ typedef struct LLCInCtx
+   struct work_struct BulkWork;
+ } tLLCInCtx;
+ 
+-
+ //------------------------------------------------------------------------------
+ // Function declarations
+ //------------------------------------------------------------------------------
+-- 
+2.7.4
+

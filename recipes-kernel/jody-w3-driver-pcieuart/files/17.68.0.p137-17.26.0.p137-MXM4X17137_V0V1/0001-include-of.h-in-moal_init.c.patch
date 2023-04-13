@@ -1,0 +1,44 @@
+From e41738a48413cb051d27556087c4be8ce8774c39 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Tue, 26 Mar 2019 15:09:44 +0100
+Subject: [PATCH] include of.h in moal_init.c
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlinux/moal_init.c | 4 ++++
+ wlan_src/mlinux/moal_main.c | 4 ----
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_init.c b/wlan_src/mlinux/moal_init.c
+index 0e46909..12ad701 100755
+--- a/wlan_src/mlinux/moal_init.c
++++ b/wlan_src/mlinux/moal_init.c
+@@ -19,6 +19,10 @@
+   * this warranty disclaimer.
+   *
+   */
++#ifdef CONFIG_OF
++#include <linux/of.h>
++#endif
++
+ #include	"moal_main.h"
+ 
+ /** Global moal_handle array */
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 74939fd..b9c205d 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -54,10 +54,6 @@ Change log:
+ #include <net/tcp.h>
+ #include <net/dsfield.h>
+ 
+-#ifdef CONFIG_OF
+-#include <linux/of.h>
+-#endif
+-
+ /********************************************************
+                  Global Variables
+  ********************************************************/
+-- 
+2.11.0
+

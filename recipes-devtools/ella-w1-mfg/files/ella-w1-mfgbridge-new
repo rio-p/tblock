@@ -1,0 +1,123 @@
+#!/bin/sh
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+#
+# ELLA-W1 mfgbridge init script
+#
+
+DAEMON=/opt/ella-w1/mfg-tools/mfgbridge
+PIDFILE=/var/run/mfgbridge.pid
+DESC="ELLA-W1 mfgbridge"
+RET=1
+
+test -x $DAEMON || exit 1
+
+start() {
+    modprobe -q omap_hsmmc
+    modprobe -q sd8787_mfg
+
+    waitForFile /proc/mwlan/config 5 || return 1;
+    #check for dir in proc, which will be created by driver
+    waitForDir /proc/mbt/ 5 || return 1;
+
+    for i in $(ls /proc/mbt); do
+        hciconfig $i up noscan || return 1;
+    done
+
+    cd $(dirname $DAEMON)
+    start-stop-daemon -S -q -m -p $PIDFILE -x ./$(basename $DAEMON) \
+        -- &> /dev/null &
+}
+
+stop() {
+    start-stop-daemon -K -q -p $PIDFILE
+    rm -f $PIDFILE
+
+    if [ -d /proc/mbt ]; then
+        for i in $(ls /proc/mbt); do
+            hciconfig $i down;
+        done
+    fi
+
+    modprobe -q -r omap_hsmmc
+    modprobe -q -r sd8787_mfg
+    return 0;
+}
+
+waitForFile() {
+    local i=0 ;
+    local file="$1"
+    local timeout="$2";
+    while [ ! -f "$file" ] ; do
+        echo "waiting for $file ($i)";
+        if ! [ $((i+=1)) -lt "$timeout" ]; then
+            return 1;
+        fi
+        sleep 1;
+    done;
+}
+
+waitForDir() {
+    local i=0 ;
+    local file="$1"
+    local timeout="$2";
+    while [ ! -d "$file" ] ; do
+        echo "waiting for $file ($i)";
+        if ! [ $((i+1)) -lt "$timeout" ]; then
+            return 1;
+        fi
+        sleep 1;
+    done;
+}
+
+case "$1" in
+    start)
+        test -f $PIDFILE && exit 1
+        echo -n "Starting ${DESC}: "
+        start
+        RET=$?
+        ;;
+    stop)
+        echo -n "Stopping ${DESC}: "
+        stop
+        RET=$?
+        ;;
+    restart)
+        echo -n "Restarting ${DESC}: "
+        stop
+        start
+        RET=$?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+if  [ $RET -eq "0" ]; then
+    echo "$(basename $DAEMON) $1"
+else
+    echo "$(basename $DAEMON) failed to $1"
+fi
+
+exit $RET

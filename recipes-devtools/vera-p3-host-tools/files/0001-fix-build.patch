@@ -1,0 +1,68 @@
+From 88c72acb8bb49858b6ece3a7a2db23cf7b986d62 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Tue, 3 Sep 2019 15:49:54 +0200
+Subject: [PATCH] fix build
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ src/api/Makefile | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/src/api/Makefile b/src/api/Makefile
+index 95320e1..b169876 100644
+--- a/src/api/Makefile
++++ b/src/api/Makefile
+@@ -92,42 +92,42 @@ examples: example_init example_config example_config_opmode_alternating example_
+ .PHONY: example_init
+ example_init: $(EXMPL_DIR)/example_init.o $(EXMPL_DIR)/example_utils.o
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_init.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_init.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_config
+ example_config: $(EXMPL_DIR)/example_config.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_config.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_config.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_config_opmode_alternating
+ example_config_opmode_alternating: $(EXMPL_DIR)/example_config_opmode_alternating.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_config_opmode_alternating.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_config_opmode_alternating.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_tx
+ example_tx: $(EXMPL_DIR)/example_tx.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_tx.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_tx.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_rx
+ example_rx: $(EXMPL_DIR)/example_rx.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_rx.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_rx.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_sae
+ example_sae: $(EXMPL_DIR)/example_sae.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_sae.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_sae.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_gpio
+ example_gpio: $(EXMPL_DIR)/example_gpio.o $(EXMPL_DIR)/example_utils.o 
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_gpio.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_gpio.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: example_get_status
+ example_get_status: $(EXMPL_DIR)/example_get_status.o $(EXMPL_DIR)/example_utils.o
+ 	mkdir -p $(BIN_DIR)
+-	$(CC) $(OBJ_DIR)/example_get_status.o $(OBJ_DIR)/example_utils.o $(LDFLAGS) $(LDUBXP3) -o $(BIN_DIR)/$@
++	$(CC) $(OBJ_DIR)/example_get_status.o $(OBJ_DIR)/example_utils.o $(LDUBXP3) $(LDFLAGS) -o $(BIN_DIR)/$@
+ 
+ .PHONY: $(TARGET)
+ $(TARGET): $(C_OBJECT_FILES)
+-- 
+2.11.0
+

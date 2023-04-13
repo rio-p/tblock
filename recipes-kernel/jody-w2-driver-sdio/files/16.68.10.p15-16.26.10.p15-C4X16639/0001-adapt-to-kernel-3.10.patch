@@ -1,0 +1,29 @@
+From a6a99dc868fba805a55e35f541efa5d6c34ab097 Mon Sep 17 00:00:00 2001
+From: Vova Shcherbyna <vova.shcherbyna@u-blox.com>
+Date: Wed, 12 Jun 2019 10:54:20 +0200
+Subject: [PATCH] adapt to kernel 3.10
+
+---
+ wlan_src/mlinux/moal_sta_cfg80211.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/wlan_src/mlinux/moal_sta_cfg80211.c b/wlan_src/mlinux/moal_sta_cfg80211.c
+index 81fd352..832e232 100755
+--- a/wlan_src/mlinux/moal_sta_cfg80211.c
++++ b/wlan_src/mlinux/moal_sta_cfg80211.c
+@@ -2464,8 +2464,12 @@ woal_cfg80211_assoc(moal_private *priv, void *sme, t_u8 wait_option,
+ #endif
+ 		if (bss) {
+ 			if ((!reg_alpha2 ||
++#if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
+ 			     strncmp(reg_alpha2, "99", strlen("99"))) &&
+ 			    (!country_ie_ignore))
++#else
++			     strncmp(reg_alpha2, "99", strlen("99"))))
++#endif
+ 				woal_process_country_ie(priv, bss);
+ #if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+ 			cfg80211_put_bss(priv->wdev->wiphy, bss);
+-- 
+2.7.4
+

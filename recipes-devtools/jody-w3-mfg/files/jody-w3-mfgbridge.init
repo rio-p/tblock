@@ -1,0 +1,128 @@
+#!/bin/sh
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+#
+# JODY-W3 mfgbridge init script
+#
+
+exit_with_error() { echo $@ 1>&2; exit 1; }
+[ $(id -u) == 0 ] || exit_with_error "Priviledged access required"
+
+MFGBRIDGE=/opt/jody-w3/mfg-tools/mfgbridge
+[ -x $MFGBRIDGE ] || exit_with_error "File not executable: '$MFGBRIDGE'"
+MFGBRIDGE_CONF=/opt/jody-w3/mfg-tools/bridge_init.conf
+[ -f $MFGBRIDGE_CONF ] || exit_with_error "File not found: '$MFGBRIDGE_CONF'"
+MFGBRIDGE_PID=/var/run/jody-w3-mfgbridge.pid
+
+JODY_W3_CONF=/etc/default/jody-w3-mfgbridge
+. $JODY_W3_CONF || exit_with_error "Config not found: '$JODY_W3_CONF'"
+[ -e $JODY_W3_UART ] || exit_with_error "Device not found: '$JODY_W3_UART'"
+
+CORE0_DEVID=0x2b43
+CORE1_DEVID=0x2b44
+
+get_netdev() {
+    local devid=$1
+    local netdev
+
+    for netdev in /sys/class/net/*; do
+        if [ -f ${netdev}/device/device ] && \
+           [ _$(cat ${netdev}/device/device) == _${devid} ]
+        then
+            basename ${netdev}
+        fi
+    done
+}
+
+update_mfgbridge_config() {
+    local config_file=$1
+    local config_uart=$2
+    local config_baud=$3
+    local config_hci=$4
+    local core0_netdev=$(get_netdev $CORE0_DEVID)
+    local core1_netdev=$(get_netdev $CORE1_DEVID)
+
+    # Check and update bridge config if needed
+    if ! grep -q Serial=\"${config_uart}\" $config_file; then
+        sed -i -e "s~Serial=.*~Serial=\"${config_uart}\"~" $config_file
+    fi
+    if ! grep -q BAUD=${config_baud} $config_file; then
+        sed -i -e "s~BAUD=.*~BAUD=${config_baud}~" $config_file
+    fi
+    if ! grep -q BT_interface_name=\"${config_hci}\" $config_file; then
+        sed -i -e \
+            "s~BT_interface_name_Master=.*~BT_interface_name_Master=\"${config_hci}\"~" \
+            $config_file
+    fi
+    if ! grep -q WLAN_interface_name_0=\"${core0_netdev}\" $config_file; then
+        sed -i -e \
+            "s~WLAN_interface_name_0=.*~WLAN_interface_name_0=\"${core0_netdev}\"~" \
+            $config_file
+    fi
+    if ! grep -q WLAN_interface_name_1=\"${core1_netdev}\" $config_file; then
+        sed -i -e \
+            "s~WLAN_interface_name_1=.*~WLAN_interface_name_1=\"${core1_netdev}\"~" \
+            $config_file
+    fi
+}
+
+do_start() {
+    hciattach -t 0 $JODY_W3_UART any $JODY_W3_BAUD flow && \
+    rfkill unblock all && \
+    hciconfig $JODY_W3_HCI up && \
+    update_mfgbridge_config \
+        $MFGBRIDGE_CONF \
+        $JODY_W3_UART \
+        $JODY_W3_BAUD \
+        $JODY_W3_HCI && \
+    hciconfig $JODY_W3_HCI noscan && \
+    cd $(dirname $MFGBRIDGE) && \
+    start-stop-daemon -S -q -m -p $MFGBRIDGE_PID -b \
+        -x ./$(basename $MFGBRIDGE) --
+}
+
+do_stop() {
+    start-stop-daemon -K -q -p $MFGBRIDGE_PID && \
+    rm -f $MFGBRIDGE_PID
+    hciconfig $JODY_W3_HCI down && \
+    killall -q hciattach
+}
+
+case "$1" in
+    start)
+        do_start
+        ;;
+    stop)
+        do_stop
+        ;;
+    restart)
+        do_stop
+        do_start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        ;;
+esac
+
+exit $?

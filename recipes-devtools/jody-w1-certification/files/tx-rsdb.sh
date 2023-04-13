@@ -1,0 +1,529 @@
+#!/bin/bash
+#
+# Copyright (C) u-blox
+#
+# u-blox reserves all rights in this deliverable (documentation, software, etc.,
+# hereafter "Deliverable").
+#
+# u-blox grants you the right to use, copy, modify and distribute the Deliverable
+# provided hereunder for any purpose without fee, provided this entire notice is
+# included in all copies of any software which is or includes a copy or
+# modification of this software and in all copies of the supporting documentation
+# for such software.
+#
+# THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+# WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY REPRESENTATION
+# OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS DELIVERABLE OR
+# ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+#
+# In case you provide us a feedback or make a contribution in the form of a
+# further development of the Deliverable ("Contribution"), u-blox will have the
+# same rights as granted to you, namely to use, copy, modify and distribute the
+# Contribution provided to us for any purpose without fee.
+#
+
+exit_with_error() { echo $@ 1>&2; exit 1; }
+
+JODY_W1_FW_PATH=/lib/firmware/brcm
+JODY_W1_MODELS=$(find ${JODY_W1_FW_PATH} -name *.nvram -type f \
+    -exec basename {} .nvram \; 2> /dev/null | sort)
+[ -n "$JODY_W1_MODELS" ] || exit_with_error "No JODY-W1 models found."
+JODY_W1_SELECTED=
+
+# module=
+# ssid=CMW-AP
+# ssid=emmy
+wl=/opt/jody-w1/mfg-tools/wl
+# ipAddr=172.22.1.100
+attDetectWlan=5
+msleepDetectTime=400
+apdevice="wlan"
+step=1
+historyFile=".tx_history"
+
+# colour codes
+NORM="\e[0m"
+BOLD="\e[1m"
+INVS="\e[7m"
+BLINK="\e[5m"
+LRED="\e[1;31m"
+LGREEN="\e[1;32m"
+GREEN="\e[0;32;40m"
+ULIN="\e[4m"
+
+# defaults
+
+# functions
+
+viewSuccess () {
+    echo -e "\r\t\t\t\t\t${GREEN}[SUCCESS]${NORM}"
+}
+
+viewStep () {
+    echo -n "${1}. ${2}"
+    let step="$step+1"
+}
+
+myExit () {
+    if [ "$1" = "0" ]
+    then
+        echo -e "\n${LGREEN}*** STARTED ***  ${NORM}"
+    else
+        echo -e "\n\n${LRED}*** FAIL *** ${2}${NORM}\n"
+    fi
+
+    rmmod bcmdhd &>/dev/null
+    sleep 2
+    exit $1
+}
+
+getInput () { # prompt message, hint, varName, history
+    echo -ne "$1 ${2}: $4 "
+
+    read value
+    if [ -z $value ]
+    then
+        eval "$3=$4"
+    else
+        eval "$3=$value"
+    fi
+}
+
+select_jody_w1_model() {
+    local i
+
+    echo "Listing available JODY-W1 models:"
+    for i in $(seq $#); do
+        echo "  "$(eval echo "$i\) \${$i}" | tr '[:lower:]' '[:upper:]')
+    done
+
+    while read -p "Select model: " -r i; do
+        if [ $i -ge 1 -a $i -le $# ]; then
+            break;
+        fi 2> /dev/null
+    done
+
+    JODY_W1_SELECTED=$(eval echo \${$i})
+}
+
+killall wpa_supplicant &>/dev/null
+rmmod bcmdhd &>/dev/null
+
+. $historyFile &>/dev/null
+
+# ================= load the driver =========================
+select_jody_w1_model $JODY_W1_MODELS
+modprobe ${JODY_W1_SELECTED}-mfg &> /dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "load $module drivers..."
+fi
+viewSuccess
+
+# ================= check wlan presence ===========================
+viewStep $step "check WLAN device presence..."
+
+COUNTER=0
+while [ $COUNTER -lt $attDetectWlan ]
+do
+    msleep $msleepDetectTime
+    ifconfig -a|grep $apdevice &>/dev/null
+    if [ $? -eq 0 ]
+    then
+        break
+    fi
+    let COUNTER+=1
+done
+
+if [ $COUNTER -ge $attDetectWlan ]
+then
+    myExit $step  "WLAN device \"$apdevice\" not found..."
+fi
+viewSuccess
+
+# ================= basic configurations ===========================
+viewStep $step "set device configuration (core1)..."
+
+# set rsdb mode
+$wl rsdb_mode RSDB &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl rsdb_mode 1"
+fi
+
+# disable the adapter
+$wl down &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl down"
+fi
+
+# dis min power consumption mode
+$wl mpc 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl mpc 0"
+fi
+
+# SW transmit power control
+$wl phy_txpwrctrl 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_txpwrctrl 1"
+fi
+
+# change country code here! Get all possible country codes: "wl country list"
+$wl country ALL &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl country ..."
+fi
+
+# dis watchdog because can hit to run something in phy...
+$wl phy_watchdog 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_watchdog 0"
+fi
+
+viewSuccess
+
+# ================= set channel ===========================
+hint="\n              (1-13 | 36-165)"
+getInput "   enter TX Channel for core1" "$hint" "wlanChannel" "$wlanChannel_hystory"
+
+wlanChannelBW=20
+if [ $wlanChannel -le "13" ]
+then
+    band=b
+    rateSetting=2g_rate
+    hint="\n       legacy, HT (l,h)"
+else
+    band=a
+    rateSetting=5g_rate
+    hint="\n       legacy, HT, VHT (l,h,v)"
+fi
+
+getInput "   enter TX type" "$hint" "txType" "$txType_hystory"
+
+case $txType in
+    "h" )
+        if [ "$band" = "a" ]
+        then
+            hint="(20,40)"
+            getInput "   enter channel bandwidth" "$hint" "wlanChannelBW" "$wlanChannelBW"
+        fi
+        hint="(0-7)"
+        rateSetting+=" -h"
+    ;;
+
+    "v" )
+        hint="(20,40,80)"
+        getInput "   enter channel bandwidth" "$hint" "wlanChannelBW" "$wlanChannelBW"
+        if [ "$wlanChannelBW" = "20" ]
+        then
+            hint="(0-8)"
+        else
+            hint="(0-9)"
+        fi
+        rateSetting+=" -v"
+    ;;
+
+    * )
+        if [ "$band" = "b" ]
+        then
+            hint="\n     DSSS: 1,2,5.5,11\n     OFDM: 6,9,12,18,24,36,48,54"
+        else
+            hint="\n     OFDM: 6,9,12,18,24,36,48,54"
+        fi
+        rateSetting+=" -r"
+    ;;
+esac
+
+getInput "   enter TX DataRate" "$hint" "wlanDataRate" "$wlanDataRate_hystory"
+
+viewStep $step "set TX channel: $wlanChannel"
+
+# set band
+$wl band $band &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl band $band"
+fi
+
+# set channel and bandwidth
+$wl chanspec ${wlanChannel}/${wlanChannelBW} &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl chanspec ${wlanChannel}/${wlanChannelBW}"
+fi
+
+viewSuccess
+
+# ================= set data rate ===========================
+
+viewStep $step "set TX data rate: $wlanDataRate"
+$wl $rateSetting $wlanDataRate -b ${wlanChannelBW} &>/dev/null
+
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl $rateSetting $wlanDataRate"
+fi
+
+# enable the adapter
+$wl up &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl up"
+fi
+
+# force the PHY calibration
+$wl phy_forcecal 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_forcecal 1"
+fi
+
+viewSuccess
+
+# ================= set output power ===========================
+hint="(dBm)"
+getInput "   enter TX output power" "$hint" "wlanOutputPower" "$wlanOutputPower_hystory"
+
+viewStep $step "set TX output power: $wlanOutputPower dBm"
+
+# Set TX output power
+$wl txpwr1 -o -d $wlanOutputPower &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl txpwr1 -o -d $wlanOutputPower"
+fi
+
+# disable background scan
+$wl scansuppress 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl scansuppress 1"
+fi
+
+viewSuccess
+
+# ================= start sending ===========================
+viewStep $step "start send on core 1"
+
+# start tx:
+$wl pkteng_start 10:20:30:40:50:60 tx 20 2048 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl pkteng_start 10:20:30:40:50:60 tx 20 2048 0"
+fi
+
+viewSuccess
+
+echo -e "Module sends packets on core1 now.\n"
+
+echo "module_hystory=$module">$historyFile
+echo "wlanChannel_hystory=$wlanChannel">>$historyFile
+echo "txType_hystory=$txType">>$historyFile
+echo "wlanChannelBW_hystory=$wlanChannelBW">>$historyFile
+echo "wlanOutputPower_hystory=$wlanOutputPower">>$historyFile
+echo "wlanDataRate_hystory=$wlanDataRate">>$historyFile
+echo "core_hystory=$core">>$historyFile
+
+# ================= core 2 ===========================
+
+# ================= basic configurations ===========================
+viewStep $step "set device configuration (core2)..."
+
+# set rsdb mode
+$wl -w 1 bss -C 2 sta &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl –w 1 bss –C 2 sta"
+fi
+
+# dis min power consumption mode
+$wl -i wl1.2 mpc 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl mpc 0"
+fi
+
+# SW transmit power control
+$wl -i wl1.2 phy_txpwrctrl 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_txpwrctrl 1"
+fi
+
+# change country code here! Get all possible country codes: "wl country list"
+$wl -i wl1.2 country ALL &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl country ..."
+fi
+
+# dis watchdog because can hit to run something in phy...
+$wl -i wl1.2 phy_watchdog 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_watchdog 0"
+fi
+
+viewSuccess
+
+# ================= set channel ===========================
+hint="\n              (1-13 | 36-165)"
+getInput "   enter TX Channel for core2" "$hint" "wlanChannel" "$wlanChannel_hystory2"
+
+wlanChannelBW=20
+if [ $wlanChannel -le "13" ]
+then
+    band=b
+    rateSetting=2g_rate
+    hint="\n       legacy, HT (l,h)"
+else
+    band=a
+    rateSetting=5g_rate
+    hint="\n       legacy, HT, VHT (l,h,v)"
+fi
+
+getInput "   enter TX type" "$hint" "txType" "$txType_hystory2"
+
+case $txType in
+    "h" )
+        if [ "$band" = "a" ]
+        then
+            hint="(20,40)"
+            getInput "   enter channel bandwidth" "$hint" "wlanChannelBW" "$wlanChannelBW"
+        fi
+        hint="(0-7)"
+        rateSetting+=" -h"
+    ;;
+
+    "v" )
+        hint="(20,40,80)"
+        getInput "   enter channel bandwidth" "$hint" "wlanChannelBW" "$wlanChannelBW"
+        if [ "$wlanChannelBW" = "20" ]
+        then
+            hint="(0-8)"
+        else
+            hint="(0-9)"
+        fi
+        rateSetting+=" -v"
+    ;;
+
+    * )
+        if [ "$band" = "b" ]
+        then
+            hint="\n     DSSS: 1,2,5.5,11\n     OFDM: 6,9,12,18,24,36,48,54"
+        else
+            hint="\n     OFDM: 6,9,12,18,24,36,48,54"
+        fi
+        rateSetting+=" -r"
+    ;;
+esac
+
+getInput "   enter TX DataRate" "$hint" "wlanDataRate" "$wlanDataRate_hystory2"
+
+viewStep $step "set TX channel: $wlanChannel"
+
+# set band
+$wl -i wl1.2 band $band &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl band $band"
+fi
+
+#set channel and bandwidth
+$wl -i wl1.2 chanspec ${wlanChannel}/${wlanChannelBW} &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl chanspec ${wlanChannel}/${wlanChannelBW}"
+fi
+
+viewSuccess
+
+# ================= set data rate ===========================
+
+viewStep $step "set TX data rate: $wlanDataRate"
+$wl -i wl1.2 $rateSetting $wlanDataRate -b ${wlanChannelBW} &>/dev/null
+
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl $rateSetting $wlanDataRate"
+fi
+
+# enable the adapter
+$wl -i wl1.2 up &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl up"
+fi
+
+# force the PHY calibration
+$wl -i wl1.2 phy_forcecal 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl phy_forcecal 1"
+fi
+
+viewSuccess
+
+# ================= set output power ===========================
+hint="(dBm)"
+getInput "   enter TX output power" "$hint" "wlanOutputPower" "$wlanOutputPower_hystory2"
+
+viewStep $step "set TX output power: $wlanOutputPower dBm"
+
+# Set TX output power
+$wl -i wl1.2 txpwr1 -o -d $wlanOutputPower &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl txpwr1 -o -d $wlanOutputPower"
+fi
+
+# disable background scan
+$wl -i wl1.2 scansuppress 1 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl scansuppress 1"
+fi
+
+viewSuccess
+
+# ================= start sending ===========================
+
+viewStep $step "start send on core 2 ..."
+
+# start tx:
+$wl -i wl1.2 pkteng_start 10:20:30:40:50:60 tx 20 2048 0 &>/dev/null
+if [ $? -ne 0 ]
+then
+    myExit $step  "wl -i wl1.2 pkteng_start 10:20:30:40:50:60 tx 20 2048 0"
+fi
+
+viewSuccess
+
+echo "module_hystory2=$module">>$historyFile
+echo "wlanChannel_hystory2=$wlanChannel">>$historyFile
+echo "txType_hystory2=$txType">>$historyFile
+echo "wlanChannelBW_hystory2=$wlanChannelBW">>$historyFile
+echo "wlanOutputPower_hystory2=$wlanOutputPower">>$historyFile
+echo "wlanDataRate_hystory2=$wlanDataRate">>$historyFile
+
+echo -e "\nModule sends packets on core 1 and 2.\nPress Enter to stop sending on both cores"
+read qwe
+
+$wl -i wl1.2 pkteng_stop tx
+$wl pkteng_stop tx
+$wl down
+
+rmmod bcmdhd &>/dev/null
+exit 0
+
+while [ 1 ]
+do
+    sleep 10
+    echo -n "."
+done

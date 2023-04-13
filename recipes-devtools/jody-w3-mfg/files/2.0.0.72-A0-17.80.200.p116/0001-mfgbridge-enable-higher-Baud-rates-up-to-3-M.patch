@@ -1,0 +1,46 @@
+From c7adbfbbe90155b3649acfa4a727f45a9f305ba3 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Thu, 25 Apr 2019 16:38:28 +0200
+Subject: [PATCH] mfgbridge: enable higher Baud rates up to 3 M
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ src_mfgbridge/bridge/mfgbridge.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/src_mfgbridge/bridge/mfgbridge.c b/src_mfgbridge/bridge/mfgbridge.c
+index daf679b..42889ac 100644
+--- a/src_mfgbridge/bridge/mfgbridge.c
++++ b/src_mfgbridge/bridge/mfgbridge.c
+@@ -725,6 +725,28 @@ int brdg_parse_config(bridge_cb * bridge, char *input_conf_file)
+                 BAUDRATE = B38400;
+             else if (baud_in_num == 115200)
+                 BAUDRATE = B115200;
++            else if (baud_in_num == 230400)
++                BAUDRATE = B230400;
++            else if (baud_in_num == 460800)
++                BAUDRATE = B460800;
++            else if (baud_in_num == 500000)
++                BAUDRATE = B500000;
++            else if (baud_in_num == 576000)
++                BAUDRATE = B576000;
++            else if (baud_in_num == 921600)
++                BAUDRATE = B921600;
++            else if (baud_in_num == 1000000)
++                BAUDRATE = B1000000;
++            else if (baud_in_num == 1152000)
++                BAUDRATE = B1152000;
++            else if (baud_in_num == 1500000)
++                BAUDRATE = B1500000;
++            else if (baud_in_num == 2000000)
++                BAUDRATE = B2000000;
++            else if (baud_in_num == 2500000)
++                BAUDRATE = B2500000;
++            else if (baud_in_num == 3000000)
++                BAUDRATE = B3000000;
+             else {
+                 printf("Fail parser !!! Invalid baud rate %d\n", baud_in_num);
+                 goto error;
+-- 
+2.11.0
+

@@ -1,0 +1,26 @@
+From 91acefa2e6c7fa3a10ed2e3a08e9b7b3dce706c7 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 16:20:17 +0200
+Subject: [PATCH 5/6] uaputl: 64-bit app with 64-bit kernel
+
+Dissable 32 Bit userspace over 64Bit kernel space.
+---
+ wlan_src/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wlan_src/Makefile b/wlan_src/Makefile
+index db8e252..33bf259 100755
+--- a/wlan_src/Makefile
++++ b/wlan_src/Makefile
+@@ -93,7 +93,7 @@ export CONFIG_STATIC_LINK=y
+ CONFIG_ANDROID_KERNEL=y
+ 
+ #32bit app over 64bit kernel support
+-CONFIG_USERSPACE_32BIT_OVER_KERNEL_64BIT=y
++CONFIG_USERSPACE_32BIT_OVER_KERNEL_64BIT=n
+ 
+ 
+ #############################################################################
+-- 
+2.1.4
+

@@ -1,0 +1,151 @@
+From 61172aa48ed6e0a21233b75b2081900f95edae1d Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 17:03:04 +0200
+Subject: [PATCH 2/6] remove wakelock
+
+Remove wakelock as the feature is unavailable in Linux mainline.
+---
+ wlan_src/mlinux/moal_main.c         | 13 -------------
+ wlan_src/mlinux/moal_main.h         | 14 --------------
+ wlan_src/mlinux/moal_shim.c         |  8 --------
+ wlan_src/mlinux/moal_sta_cfg80211.c |  7 -------
+ 4 files changed, 42 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index ab48c12..0105d5f 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -440,10 +440,6 @@ woal_process_hang(moal_handle *handle)
+ 		PRINTM(MMSG, "Start to process hanging\n");
+ 		reset_handle = handle;
+ 		queue_work(hang_workqueue, &hang_work);
+-#ifdef ANDROID_KERNEL
+-#define WAKE_LOCK_HANG 5000
+-		wake_lock_timeout(&reset_handle->wake_lock, WAKE_LOCK_HANG);
+-#endif
+ 	}
+ 	LEAVE();
+ }
+@@ -8072,9 +8068,6 @@ woal_add_card(void *card)
+ 		PRINTM(MFATAL, "Failed to register wlan device!\n");
+ 		goto err_registerdev;
+ 	}
+-#ifdef ANDROID_KERNEL
+-	wake_lock_init(&handle->wake_lock, WAKE_LOCK_SUSPEND, "mwlan");
+-#endif
+ 
+ 	/* Init FW and HW */
+ 	if (MLAN_STATUS_SUCCESS != woal_init_fw(handle)) {
+@@ -8108,9 +8101,6 @@ err_init_fw:
+ 			wait_event_interruptible(handle->init_wait_q,
+ 						 handle->init_wait_q_woken);
+ 	}
+-#ifdef ANDROID_KERNEL
+-	wake_lock_destroy(&handle->wake_lock);
+-#endif
+ 	/* Unregister device */
+ 	PRINTM(MINFO, "unregister device\n");
+ 	woal_unregister_dev(handle);
+@@ -8269,9 +8259,6 @@ woal_remove_card(void *card)
+ 	/* Unregister device */
+ 	PRINTM(MINFO, "unregister device\n");
+ 	woal_unregister_dev(handle);
+-#ifdef ANDROID_KERNEL
+-	wake_lock_destroy(&handle->wake_lock);
+-#endif
+ 	/* Free adapter structure */
+ 	PRINTM(MINFO, "Free Adapter\n");
+ 	woal_free_moal_handle(handle);
+diff --git a/wlan_src/mlinux/moal_main.h b/wlan_src/mlinux/moal_main.h
+index 79969ff..ef4ed7b 100755
+--- a/wlan_src/mlinux/moal_main.h
++++ b/wlan_src/mlinux/moal_main.h
+@@ -95,10 +95,6 @@ Change log:
+ 
+ #include	<linux/firmware.h>
+ 
+-#ifdef ANDROID_KERNEL
+-#include <linux/wakelock.h>
+-#endif
+-
+ #include        "mlan.h"
+ #include        "moal_shim.h"
+ /* Wireless header */
+@@ -561,13 +557,6 @@ out:
+ /* IOCTL Timeout */
+ #define MOAL_IOCTL_TIMEOUT                    (20 * HZ)
+ 
+-#ifdef ANDROID_KERNEL
+-/** Wake lock timeout in msec */
+-#define WAKE_LOCK_TIMEOUT 3000
+-/** Roaming Wake lock timeout in msec */
+-#define ROAMING_WAKE_LOCK_TIMEOUT 10000
+-#endif
+-
+ /** Threshold value of number of times the Tx timeout happened */
+ #define NUM_TX_TIMEOUT_THRESHOLD      5
+ 
+@@ -1476,9 +1465,6 @@ struct _moal_handle {
+ 	/** Card specific driver version */
+ 	t_s8 driver_version[MLAN_MAX_VER_STR_LEN];
+ 	char *fwdump_fname;
+-#ifdef ANDROID_KERNEL
+-	struct wake_lock wake_lock;
+-#endif
+ 	t_u8 histogram_table_num;
+ 	/* feature_control */
+ 	t_u8 feature_control;
+diff --git a/wlan_src/mlinux/moal_shim.c b/wlan_src/mlinux/moal_shim.c
+index 1bb22c1..2dd7e7b 100755
+--- a/wlan_src/mlinux/moal_shim.c
++++ b/wlan_src/mlinux/moal_shim.c
+@@ -867,10 +867,6 @@ moal_recv_packet(IN t_void *pmoal_handle, IN pmlan_buffer pmbuf)
+ 
+ 			priv->stats.rx_bytes += skb->len;
+ 			priv->stats.rx_packets++;
+-#ifdef ANDROID_KERNEL
+-			wake_lock_timeout(&handle->wake_lock,
+-					  WAKE_LOCK_TIMEOUT);
+-#endif
+ 			if (in_interrupt())
+ 				netif_rx(skb);
+ 			else {
+@@ -1407,10 +1403,6 @@ moal_recv_event(IN t_void *pmoal_handle, IN pmlan_event pmevent)
+ #endif
+ 				) {
+ 				priv->roaming_required = MTRUE;
+-#ifdef ANDROID_KERNEL
+-				wake_lock_timeout(&priv->phandle->wake_lock,
+-						  ROAMING_WAKE_LOCK_TIMEOUT);
+-#endif
+ 				wake_up_interruptible(&priv->phandle->
+ 						      reassoc_thread.wait_q);
+ 			}
+diff --git a/wlan_src/mlinux/moal_sta_cfg80211.c b/wlan_src/mlinux/moal_sta_cfg80211.c
+index 1dc55a8..49d1165 100755
+--- a/wlan_src/mlinux/moal_sta_cfg80211.c
++++ b/wlan_src/mlinux/moal_sta_cfg80211.c
+@@ -4358,10 +4358,6 @@ woal_cfg80211_resume(struct wiphy *wiphy)
+ 				    handle->priv[i]->roaming_enabled) {
+ 					handle->priv[i]->roaming_required =
+ 						MTRUE;
+-#ifdef ANDROID_KERNEL
+-					wake_lock_timeout(&handle->wake_lock,
+-							  ROAMING_WAKE_LOCK_TIMEOUT);
+-#endif
+ 					wake_up_interruptible(&handle->
+ 							      reassoc_thread.
+ 							      wait_q);
+@@ -6794,9 +6790,6 @@ woal_register_cfg80211(moal_private *priv)
+ 		WIPHY_FLAG_HAVE_AP_SME | WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD;
+ 	wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
+ #endif
+-#ifdef ANDROID_KERNEL
+-	wiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
+-#endif
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) || defined(COMPAT_WIRELESS)
+ 	wiphy->flags |= WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
+ 	wiphy->max_sched_scan_ssids = MRVDRV_MAX_SSID_LIST_LENGTH;
+-- 
+2.1.4
+

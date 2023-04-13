@@ -1,0 +1,26 @@
+From 78a347058c83539c691c3d9e1056550c3017d411 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 8 May 2019 11:33:20 +0200
+Subject: [PATCH] uartfwloader: make default CC optional
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ uartfwloader_src/linux/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/uartfwloader_src/linux/Makefile b/uartfwloader_src/linux/Makefile
+index 242a60a..cff9386 100644
+--- a/uartfwloader_src/linux/Makefile
++++ b/uartfwloader_src/linux/Makefile
+@@ -4,7 +4,7 @@
+ .SUFFIXES: .C .c .s .o
+ 
+ OSTYPE=linux
+-CC=gcc
++CC?=gcc
+ CFLAGS=-g -O2 -I.
+ 
+ 
+-- 
+2.11.0
+

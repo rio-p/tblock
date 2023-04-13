@@ -1,0 +1,51 @@
+From 274dd053b63dd8ee12b254b9e4447099aef58e47 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Thu, 14 Mar 2019 16:20:21 +0100
+Subject: [PATCH] remove offending inlines
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlan/mlan_main.h | 4 ++--
+ wlan_src/mlan/mlan_usb.c  | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/wlan_src/mlan/mlan_main.h b/wlan_src/mlan/mlan_main.h
+index f9c7f16..a822901 100755
+--- a/wlan_src/mlan/mlan_main.h
++++ b/wlan_src/mlan/mlan_main.h
+@@ -1927,8 +1927,8 @@ mlan_status wlan_send_null_packet(pmlan_private priv, t_u8 flags);
+ mlan_status wlan_usb_deaggr_rx_pkt(IN pmlan_adapter pmadapter,
+ 				   pmlan_buffer pmbuf);
+ 
+-inline t_void wlan_reset_usb_tx_aggr(IN pmlan_adapter pmadapter);
+-inline usb_tx_aggr_params *wlan_get_usb_tx_aggr_params(IN pmlan_adapter
++t_void wlan_reset_usb_tx_aggr(IN pmlan_adapter pmadapter);
++usb_tx_aggr_params *wlan_get_usb_tx_aggr_params(IN pmlan_adapter
+ 						       pmadapter,
+ 						       IN t_u32 port);
+ t_void wlan_usb_tx_aggr_timeout_func(t_void *function_context);
+diff --git a/wlan_src/mlan/mlan_usb.c b/wlan_src/mlan/mlan_usb.c
+index 0844dd8..1194698 100755
+--- a/wlan_src/mlan/mlan_usb.c
++++ b/wlan_src/mlan/mlan_usb.c
+@@ -623,7 +623,7 @@ wlan_usb_tx_aggr_timeout_func(t_void *function_context)
+  *
+  *  @return 	N/A
+  */
+-inline t_void
++t_void
+ wlan_reset_usb_tx_aggr(IN pmlan_adapter pmadapter)
+ {
+ 	t_s32 i = 0;
+@@ -659,7 +659,7 @@ wlan_reset_usb_tx_aggr(IN pmlan_adapter pmadapter)
+  *
+  *  @return	            A pointer to usb_tx_aggr_params
+  */
+-inline usb_tx_aggr_params *
++usb_tx_aggr_params *
+ wlan_get_usb_tx_aggr_params(IN pmlan_adapter pmadapter, IN t_u32 port)
+ {
+ 	int i;
+-- 
+2.11.0
+

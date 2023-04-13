@@ -1,0 +1,231 @@
+# u-blox Jody W1 module. CYW89359 WLBGA - 2 antenna variant
+# Module:		JODY-W163-04A-00
+# Interface: 	SDIO
+# Last change: 	28-08-2018, ccza
+NVRAMRev=$Rev: 663225 $
+cckdigfilttype=4
+# valid ofdm filter types are 0 and 1
+ofdmfilttype_2gbe=127
+ofdmfilttype_5gbe=127
+sromrev=11
+boardrev=0x1108
+#boardtype=0x0804
+boardtype=0x07b5
+boardflags=0x00480201
+boardflags2=0x00800000
+boardflags3=0x48700186
+wlbga5g80=1
+opt_89359B1=1
+#boardnum=57410
+macaddr=00:90:4c:12:d0:e2
+ccode=0
+regrev=0
+antswitch=0
+pdgain5g=0
+pdgain2g=0
+tworangetssi2g=0
+tworangetssi5g=0
+# Low power range TSSI cal enable
+lowpowerrange2g=0
+lowpowerrange5g=0
+# Low Power Range start value: 0dBm
+#olpc_thresh2g=1
+#olpc_thresh5g=0
+# Power detector parameters
+AvVmid_c0=2,130,2,130,2,130,2,130,2,130
+AvVmid_c1=2,130,2,130,2,130,2,130,2,130
+vendid=0x14e4
+fdss_level_2g=5,5
+fdss_level_5g=4,4
+fdss_interp_en=1
+papd_optf=1
+devid=0x43ef
+manfid=0x2d0
+#prodid=0x052e
+nocrc=1
+sco_rssi_thresh=-75
+otpimagesize=502
+xtalfreq=37400
+rxgains2gelnagaina0=0
+rxgains2gtrisoa0=10
+rxgains2gtrelnabypa0=0
+rxgains5gelnagaina0=0
+rxgains5gtrisoa0=8
+rxgains5gtrelnabypa0=0
+rxgains5gmelnagaina0=0
+rxgains5gmtrisoa0=8
+rxgains5gmtrelnabypa0=0
+rxgains5ghelnagaina0=0
+rxgains5ghtrisoa0=8
+rxgains5ghtrelnabypa0=0
+rxgains2gelnagaina1=0
+rxgains2gtrisoa1=10
+rxgains2gtrelnabypa1=0
+rxgains5gelnagaina1=0
+rxgains5gtrisoa1=8
+rxgains5gtrelnabypa1=0
+rxgains5gmelnagaina1=0
+rxgains5gmtrisoa1=8
+rxgains5gmtrelnabypa1=0
+rxgains5ghelnagaina1=0
+rxgains5ghtrisoa1=8
+rxgains5ghtrelnabypa1=0
+rrcalphasel=1
+rxchain=3
+txchain=3
+# 1=1 antenna 3=2 antennas 7=3 antennas
+aa2g=2
+aa5g=1
+# EIPR antenna gain 0=0dBi
+agbg0=0
+agbg1=0
+aga0=0
+aga1=0
+tssipos2g=1
+extpagain2g=2
+tssipos5g=1
+extpagain5g=2
+tempthresh=110
+tempoffset=255
+rawtempsense=0x1ff
+# One Range TSSI
+pa2gccka0=-207,7095,-878
+pa2gccka1=-207,7402,-909
+pa2ga0=0xff19,0x1850,0xfd04
+pa2ga1=0xff19,0x17ce,0xfd12
+# low_power
+#pa2ga2=-227,4338,-573
+#pa2ga3=-219,4426,-576
+pa5gbw4080a0=0xff42,0x1acf,0xfcb3,0xff43,0x1b7e,0xfca1,0xff33,0x190f,0xfce1,0xff44,0x1a66,0xfcc4
+pa5gbw4080a1=0xff3f,0x1bca,0xfc9a,0xff3d,0x1ac0,0xfcb7,0xff32,0x19c4,0xfccd,0xff51,0x1c2f,0xfc96
+pa5ga0=0xff42,0x1bcf,0xfc9b,0xff43,0x1bfe,0xfc95,0xff33,0x198f,0xfcd4,0xff44,0x1a66,0xfcc4
+pa5ga1=0xff3f,0x1c4a,0xfc8d,0xff3d,0x1bc0,0xfc9e,0xff32,0x19c4,0xfccd,0xff51,0x1c2f,0xfc96
+# low_power
+#pa5ga2=-175,5347,-706,-162,5560,-733,-165,5464,-718,-184,5283,-700
+#pa5ga3=-189,4980,-664,-191,4808,-644,-170,5225,-702,-185,4984,-667
+maxp2ga0=74
+maxp2ga1=74
+maxp5ga0=74,74,74,74
+maxp5ga1=74,74,74,74
+maxulbp2ga0=74
+maxulbp2ga1=74
+maxulbp5ga0=74,74,74,74
+maxulbp5ga1=74,74,74,74
+subband5gver=0x4
+paparambwver=3
+cckpwroffset0=1
+cckpwroffset1=7
+cckulbpwroffset0=-6
+cckulbpwroffset1=-6
+pdoffset40ma0=0x2222
+pdoffset80ma0=0x2222
+pdoffset40ma1=0x1333
+pdoffset80ma1=0x2333
+cckbw52gpo=0
+cckbw102gpo=0
+cckbw202gpo=0
+cckbw20ul2gpo=0
+mcsbw52gpo=0xa9855422
+mcsbw102gpo=0xa9855422
+mcsbw202gpo=0xfe855422
+mcsbw402gpo=0xfe855422
+dot11agofdmhrbw52gpo=0x6622
+dot11agofdmhrbw102gpo=0x6622
+dot11agofdmhrbw202gpo=0x6622
+ofdmlrbw202gpo=0x0000
+mcsbw55glpo=0xa9866663
+mcsbw105glpo=0xa9866663
+mcsbw205glpo=0xfe866663
+mcsbw405glpo=0xfe866663
+mcsbw805glpo=0xfe866666
+mcsbw1605glpo=0
+mcsbw55gmpo=0xd9866663
+mcsbw105gmpo=0xd9866663
+mcsbw205gmpo=0xfe866663
+mcsbw405gmpo=0xfe866663
+mcsbw805gmpo=0xfe866666
+mcsbw1605gmpo=0
+mcsbw55ghpo=0xdc866663
+mcsbw105ghpo=0xdc866663
+mcsbw205ghpo=0xfe866663
+mcsbw405ghpo=0xfe866663
+mcsbw805ghpo=0xfe866666
+mcsbw1605ghpo=0
+mcslr5glpo=0x0000
+mcslr5gmpo=0x0000
+mcslr5ghpo=0x0000
+sb20in40hrpo=0x0
+sb20in80and160hr5glpo=0x0
+sb40and80hr5glpo=0x0
+sb20in80and160hr5gmpo=0x0
+sb40and80hr5gmpo=0x0
+sb20in80and160hr5ghpo=0x0
+sb40and80hr5ghpo=0x0
+sb20in40lrpo=0x0
+sb20in80and160lr5glpo=0x0
+sb40and80lr5glpo=0x0
+sb20in80and160lr5gmpo=0x0
+sb40and80lr5gmpo=0x0
+sb20in80and160lr5ghpo=0x0
+sb40and80lr5ghpo=0x0
+dot11agduphrpo=0x0
+dot11agduplrpo=0x0
+phycal_tempdelta=15
+temps_period=15
+temps_hysteresis=5
+ltecxmux=0
+ltecxpadnum=0x0504
+ltecxfnsel=0x44
+ltecxgcigpio=0x04
+# OOB params
+#device_wake_opt=1
+#host_wake_opt=0
+#sd_gpout=0 /* defined GPIO assigned to host wake
+#sd_gpval=1
+#sd_oobonly=1
+#sd_gpdc=0
+
+swctrlmap_2g=0x00000800,0x18001800,0x18001800,0x000000,0x1ff								
+swctrlmapext_2g=0x00000000,0x00000000,0x00000000,0x000000,0x001
+swctrlmap_5g=0x00000040,0x00400040,0x00400040,0x000000,0x1ff								
+swctrlmapext_5g=0x00000000,0x00010001,0x00010001,0x000000,0x001
+fem_table_init_val=0x18081808,0x00400040
+
+rssi_delta_2g_c0=2,1,2,1
+rssi_delta_2g_c1=-2,0,-2,0
+rssi_delta_5gl_c0=4,3,2,2,5,5
+rssi_delta_5gml_c0=4,2,2,2,5,5
+rssi_delta_5gmu_c0=3,2,1,2,4,5
+rssi_delta_5gh_c0=2,5,1,5,3,8
+rssi_delta_5gl_c1=3,1,3,2,5,3
+rssi_delta_5gml_c1=3,1,3,2,5,3
+rssi_delta_5gmu_c1=2,1,2,2,4,3
+rssi_delta_5gh_c1=2,3,1,5,4,6
+
+muxenab=0x10
+#avs_enab=1
+# 11b CDD mode
+# 0:enabled / 1:disabled, Antenna diversity
+#cck_onecore_tx=1
+
+# BTC setting
+# btc mode 5, for dynamic desense, could tune later
+btcdyn_flags=0
+btcdyn_default_btc_mode=5
+btc_mode=5
+
+powoffs2gtna0=-2,2,2,2,1,0,1,2,2,2,1,-1,0,0
+powoffs2gtna1=1,1,2,2,1,2,1,2,2,2,1,1,0,0
+
+ed_thresh2g=-51
+ed_thresh5g=-63
+
+# FCC power limit on ch12/13 FCC power limit in quarter dB
+#fccpwrch12=40
+#fccpwrch13=1
+#fccpwroverride=0
+
+# May 5 2016
+eps_shift0=-1,-1,-3,-1,-1,-1
+eps_shift1=-4,-6,-2,-1,-1,-1
+eps_shift2=-1,-1,-1,-3,-3,-3

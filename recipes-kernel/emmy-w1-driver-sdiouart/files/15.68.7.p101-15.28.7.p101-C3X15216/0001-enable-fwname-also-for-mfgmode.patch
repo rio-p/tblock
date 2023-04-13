@@ -1,0 +1,28 @@
+From 5df6e6ec033ee38b2f7bd831dd4673d778d3b7db Mon Sep 17 00:00:00 2001
+From: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Date: Fri, 30 Sep 2016 14:44:15 +0200
+Subject: [PATCH] PATCH: enable fw name also for mfgmode
+
+---
+ wlan_src/mlinux/moal_main.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 493a108..5214c76 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -2278,10 +2278,7 @@ woal_init_fw_dpc(moal_handle *handle)
+ 		sdio_claim_host(((struct sdio_mmc_card *)handle->card)->func);
+ #endif
+ 		ret = mlan_dnld_fw(handle->pmlan_adapter, &fw);
+-#ifdef MFG_CMD_SUPPORT
+-		if (mfg_mode == MLAN_INIT_PARA_ENABLED)
+-			fw_name = NULL;
+-#endif
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 32)
+ 		sdio_release_host(((struct sdio_mmc_card *)handle->card)->func);
+ #endif
+-- 
+2.9.3
+

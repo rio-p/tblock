@@ -1,0 +1,154 @@
+From b86c568de4f564ed1ad19d6359f9159ef74fc08e Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 3 Dec 2018 17:27:06 +0100
+Subject: [PATCH 2/2] use do_div for 64-bit unsigned division
+
+Fixup for 32-bit kernels, which have no implementation of the compiler helper
+for 64-bit unsigned division. This fixes the following error:
+
+"undefined reference to `__aeabi_uldivmod'"
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlan/mlan_shim.c        | 5 +++--
+ wlan_src/mlan/mlan_uap_txrx.c    | 4 +++-
+ wlan_src/mlinux/moal_cfgvendor.c | 9 +++++----
+ wlan_src/mlinux/moal_main.h      | 2 ++
+ wlan_src/mlinux/moal_proc.c      | 7 +++++--
+ 5 files changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/wlan_src/mlan/mlan_shim.c b/wlan_src/mlan/mlan_shim.c
+index f562eb0..46e290d 100755
+--- a/wlan_src/mlan/mlan_shim.c
++++ b/wlan_src/mlan/mlan_shim.c
+@@ -1393,6 +1393,7 @@ mlan_status
+ mlan_collect_power_statistic(IN t_void *pmlan_adapter)
+ {
+ 	mlan_adapter *pmadapter = (mlan_adapter *)pmlan_adapter;
++	pmlan_callbacks pcb = &pmadapter->callbacks;
+ 	mlan_status ret = MLAN_STATUS_SUCCESS;
+ 	t_u64 nsec = 0;
+ 	t_u64 wakeup_time = 0;
+@@ -1411,7 +1412,7 @@ mlan_collect_power_statistic(IN t_void *pmlan_adapter)
+ 						       &nsec);
+ 	if (pmadapter->ps_state == PS_STATE_SLEEP) {
+ 		pmadapter->sleep_counter++;
+-		pmadapter->sleep_enter_time_ms = nsec / 1000000;
++		pmadapter->sleep_enter_time_ms = pcb->moal_do_div(nsec, 1000000);
+ 		pmadapter->last_sleep_enter_time =
+ 			pmadapter->sleep_enter_time_ms;
+ 		PRINTM(MINFO, "sleep_enter_time is %lu\n",
+@@ -1420,7 +1421,7 @@ mlan_collect_power_statistic(IN t_void *pmlan_adapter)
+ 		       pmadapter->sleep_counter);
+ 	} else if (pmadapter->ps_state == PS_STATE_AWAKE &&
+ 		   pmadapter->sleep_enter_time_ms) {
+-		wakeup_time = nsec / 1000000;
++		wakeup_time = pcb->moal_do_div(nsec, 1000000);
+ 		if (wakeup_time < pmadapter->last_sleep_enter_time) {
+ 			PRINTM(MERROR,
+ 			       "Error! Value of wakeup_time is smaller than last sleep enter time\n");
+diff --git a/wlan_src/mlan/mlan_uap_txrx.c b/wlan_src/mlan/mlan_uap_txrx.c
+index ff10117..e9e7cfd 100755
+--- a/wlan_src/mlan/mlan_uap_txrx.c
++++ b/wlan_src/mlan/mlan_uap_txrx.c
+@@ -264,6 +264,7 @@ mlan_status
+ wlan_ops_uap_process_rx_packet(IN t_void *adapter, IN pmlan_buffer pmbuf)
+ {
+ 	pmlan_adapter pmadapter = (pmlan_adapter)adapter;
++	pmlan_callbacks pcb = &pmadapter->callbacks;
+ 	mlan_status ret = MLAN_STATUS_SUCCESS;
+ 	UapRxPD *prx_pd;
+ 	wlan_mgmt_pkt *puap_pkt_hdr = MNULL;
+@@ -351,7 +352,8 @@ wlan_ops_uap_process_rx_packet(IN t_void *adapter, IN pmlan_buffer pmbuf)
+ 							  &last_rx_sec,
+ 							  &last_rx_usec);
+ 		sta_ptr->stats.last_rx_in_msec =
+-			(t_u64)last_rx_sec *1000 + (t_u64)last_rx_usec / 1000;
++			(t_u64)last_rx_sec *1000 +
++			pcb->moal_do_div((t_u64)last_rx_usec, 1000);
+ 	}
+ 
+ 	pmbuf->priority = prx_pd->priority;
+diff --git a/wlan_src/mlinux/moal_cfgvendor.c b/wlan_src/mlinux/moal_cfgvendor.c
+index 8fbdf54..a728394 100755
+--- a/wlan_src/mlinux/moal_cfgvendor.c
++++ b/wlan_src/mlinux/moal_cfgvendor.c
+@@ -3457,6 +3457,7 @@ woal_cfg80211_subcmd_link_statistic_get(struct wiphy *wiphy,
+ {
+ 	struct net_device *dev = wdev->netdev;
+ 	moal_private *priv = (moal_private *)woal_get_netdev_priv(dev);
++	pmlan_callbacks pcb = &priv->callbacks;
+ 	struct sk_buff *skb = NULL;
+ 	mlan_ioctl_req *req = NULL;
+ 	mlan_ds_get_info *info = NULL;
+@@ -3513,7 +3514,7 @@ woal_cfg80211_subcmd_link_statistic_get(struct wiphy *wiphy,
+ 	PRINTM(MINFO, "handle->on_time=%llu\n", handle->on_time);
+ 	if (handle->on_time) {
+ 		moal_get_boot_ktime(handle, &cur_time);
+-		inter_msec = (cur_time - handle->on_time) / 1000000;
++		inter_msec = pcb->moal_do_div(cur_time - handle->on_time, 1000000);
+ 		PRINTM(MINFO, "cur_time=%llu inter_msec=%llu max_msec=%llu\n",
+ 		       cur_time, inter_msec, max_msec);
+ 		/* When we report the time up, u32 is not big enough(represent max 49days) and might out of range, make the max value to 24days. */
+@@ -3530,10 +3531,10 @@ woal_cfg80211_subcmd_link_statistic_get(struct wiphy *wiphy,
+ 	radio_stat_tmp = radio_stat;
+ 	for (i = 0; i < num_radio; i++) {
+ 		radio_stat_tmp->on_time = (t_u32)inter_msec;
+-		radio_stat_tmp->tx_time = (t_u32)(handle->tx_time / 1000);
+-		radio_stat_tmp->rx_time = (t_u32)(handle->rx_time / 1000);
++		radio_stat_tmp->tx_time = (t_u32)(pcb->moal_do_div(handle->tx_time, 1000));
++		radio_stat_tmp->rx_time = (t_u32)(pcb->moal_do_div(handle->rx_time, 1000));
+ 		radio_stat_tmp->on_time_scan =
+-			(t_u32)(handle->scan_time / 1000);
++			(t_u32)(pcb->moal_do_div(handle->scan_time, 1000));
+ 		radio_stat_tmp++;
+ 	}
+ 
+diff --git a/wlan_src/mlinux/moal_main.h b/wlan_src/mlinux/moal_main.h
+index 1978931..48bd755 100755
+--- a/wlan_src/mlinux/moal_main.h
++++ b/wlan_src/mlinux/moal_main.h
+@@ -1132,6 +1132,8 @@ enum ring_id {
+ struct _moal_private {
+ 	/** Handle structure */
+ 	moal_handle *phandle;
++    /** Callback table */
++	mlan_callbacks callbacks;
+ 	/** Tx timeout count */
+ 	t_u32 num_tx_timeout;
+ 	/** BSS index */
+diff --git a/wlan_src/mlinux/moal_proc.c b/wlan_src/mlinux/moal_proc.c
+index a85ec14..ce1abd9 100755
+--- a/wlan_src/mlinux/moal_proc.c
++++ b/wlan_src/mlinux/moal_proc.c
+@@ -498,6 +498,7 @@ woal_power_read(struct seq_file *sfp, void *data)
+ {
+ 	moal_handle *handle = (moal_handle *)sfp->private;
+ 	moal_private *priv = NULL;
++	pmlan_callbacks pcb = NULL;
+ 	t_u64 nsec = 0;
+ 	t_u64 cumulate_on_time = 0;
+ 	int ret = 0;
+@@ -511,6 +512,7 @@ woal_power_read(struct seq_file *sfp, void *data)
+ 	}
+ 
+ 	priv = woal_get_priv(handle, MLAN_BSS_ROLE_ANY);
++	pcb = &priv->callbacks;
+ 	if (priv == NULL) {
+ 		PRINTM(MERROR, "priv is NULL\n");
+ 		ret = -EFAULT;
+@@ -525,8 +527,9 @@ woal_power_read(struct seq_file *sfp, void *data)
+ 	}
+ 	moal_get_boot_ktime(handle, &nsec);
+ 	PRINTM(MINFO, "In proc, current time is %lu ms\n",
+-	       (long unsigned int)(nsec / 1000000));
+-	cumulate_on_time = nsec / 1000000 - handle->on_time / 1000000;
++	       (long unsigned int)(pcb->moal_do_div(nsec, 1000000)));
++	cumulate_on_time = pcb->moal_do_div(nsec, 1000000) -
++		pcb->moal_do_div(handle->on_time, 1000000);
+ 	seq_printf(sfp, "cumulative_on_time_ms=%lu\n",
+ 		   (long unsigned int)cumulate_on_time);
+ 	seq_printf(sfp, "cumulative_sleep_time_ms=%lu\n",
+-- 
+2.11.0
+

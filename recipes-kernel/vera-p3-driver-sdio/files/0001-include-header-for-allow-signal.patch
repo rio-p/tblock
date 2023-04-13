@@ -1,0 +1,25 @@
+From 4aff04e403103c3e204580fcae5f2791438b8c43 Mon Sep 17 00:00:00 2001
+From: Fabiano Ferronato <fabiano.ferronato@u-blox.com>
+Date: Thu, 16 May 2019 18:10:30 +0200
+Subject: [PATCH] Include header for allow_signal
+
+Signed-off-by: Fabiano Ferronato <fabiano.ferronato@u-blox.com>
+
+---
+ p3-sdio.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/p3-sdio.h b/p3-sdio.h
+index adf918c..4377d28 100644
+--- a/p3-sdio.h
++++ b/p3-sdio.h
+@@ -45,6 +45,9 @@
+ #include <linux/module.h>
+ #include <linux/namei.h>  
+ #include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
++#include <linux/sched/signal.h>
++#endif
+ 
+ // SDIO Device ID
+ #define MANUFACTURER_CODE       0x1546

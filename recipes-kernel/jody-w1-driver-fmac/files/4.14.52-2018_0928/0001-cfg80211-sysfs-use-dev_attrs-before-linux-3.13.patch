@@ -1,0 +1,29 @@
+From e6e8a4dbd9d63a6bc8a08dd696123c1482a60cd9 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 30 Jul 2018 14:46:40 +0200
+Subject: [PATCH] cfg80211: sysfs: use dev_attrs before linux 3.13
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ net/wireless/sysfs.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/net/wireless/sysfs.c b/net/wireless/sysfs.c
+index 570a2b6..ce0a81e 100644
+--- a/net/wireless/sysfs.c
++++ b/net/wireless/sysfs.c
+@@ -157,7 +157,11 @@ struct class ieee80211_class = {
+ 	.name = "ieee80211",
+ 	.owner = THIS_MODULE,
+ 	.dev_release = wiphy_dev_release,
++#if LINUX_VERSION_IS_GEQ(3,13,0)
+ 	.dev_groups = ieee80211_groups,
++#else
++	.dev_attrs = ieee80211_groups,
++#endif
+ 	.dev_uevent = wiphy_uevent,
+ 	.pm = WIPHY_PM_OPS,
+ 	.ns_type = &net_ns_type_operations,
+-- 
+2.11.0
+

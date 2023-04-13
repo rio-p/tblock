@@ -1,0 +1,26 @@
+From fda9a29bdbceb2f58ff56f175757a38eb4103529 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Wed, 17 Apr 2019 15:43:51 +0200
+Subject: [PATCH 2/2] mlanutl: enable PIC
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mapp/mlanutl/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wlan_src/mapp/mlanutl/Makefile b/wlan_src/mapp/mlanutl/Makefile
+index a8062e2..373e25b 100755
+--- a/wlan_src/mapp/mlanutl/Makefile
++++ b/wlan_src/mapp/mlanutl/Makefile
+@@ -20,7 +20,7 @@ CFLAGS := $(filter-out -I$(KERNELDIR)%, $(CFLAGS))
+ 
+ 
+ #CFLAGS += -DAP22 -fshort-enums
+-CFLAGS += -Wall
++CFLAGS += -Wall -fPIC
+ #ECHO = @
+ LIBS = -lrt
+ 
+-- 
+2.11.0
+

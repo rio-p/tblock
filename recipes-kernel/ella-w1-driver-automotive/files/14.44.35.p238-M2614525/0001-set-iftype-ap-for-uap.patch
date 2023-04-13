@@ -1,0 +1,13 @@
+Index: SD-UAPSTA-BT-FM-8787-FC13-MMC-14.44.35.p231-M2614525_AX-GPL/wlan_src/mlinux/moal_uap_cfg80211.c
+===================================================================
+--- SD-UAPSTA-BT-FM-8787-FC13-MMC-14.44.35.p231-M2614525_AX-GPL.orig/wlan_src/mlinux/moal_uap_cfg80211.c
++++ SD-UAPSTA-BT-FM-8787-FC13-MMC-14.44.35.p231-M2614525_AX-GPL/wlan_src/mlinux/moal_uap_cfg80211.c
+@@ -2702,7 +2702,7 @@ woal_register_uap_cfg80211(struct net_de
+ 		return MLAN_STATUS_FAILURE;
+ 	}
+ 	if (bss_type == MLAN_BSS_TYPE_UAP)
+-		wdev->iftype = NL80211_IFTYPE_STATION;
++		wdev->iftype = NL80211_IFTYPE_AP;
+ 
+ 	dev_net_set(dev, wiphy_net(wdev->wiphy));
+ 	dev->ieee80211_ptr = wdev;

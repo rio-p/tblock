@@ -1,0 +1,31 @@
+From 35035ba0a2997bd220a49a668881c2b073ca6360 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 2 May 2016 16:11:32 +0200
+Subject: [PATCH 3/6] enable 8887 fw dpc
+
+Omit downloading external calibration data, read data stored on the module
+(EEPROM or OTP) instead.
+---
+ wlan_src/mlinux/moal_main.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 0105d5f..c77c345 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -2516,12 +2516,6 @@ woal_init_fw_dpc(moal_handle *handle)
+ 				goto done;
+ 			}
+ 		}
+-	} else if (!cal_data_cfg) {
+-		if (handle->card_type == CARD_TYPE_SD8887) {
+-			PRINTM(MERROR, "Please add cal_data_cfg for 8887\n");
+-			ret = MLAN_STATUS_FAILURE;
+-			goto done;
+-		}
+ 	}
+ 	if (handle->user_data) {
+ 		param.pcal_data_buf = (t_u8 *)handle->user_data->data;
+-- 
+2.1.4
+

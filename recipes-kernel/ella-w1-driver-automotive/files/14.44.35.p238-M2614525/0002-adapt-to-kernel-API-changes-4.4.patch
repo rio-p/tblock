@@ -1,0 +1,48 @@
+diff --git a/wlan_src/mlinux/moal_sta_cfg80211.c b/wlan_src/mlinux/moal_sta_cfg80211.c
+index 6e3d100..7e4cbcc 100755
+--- a/wlan_src/mlinux/moal_sta_cfg80211.c
++++ b/wlan_src/mlinux/moal_sta_cfg80211.c
+@@ -3409,10 +3409,18 @@ woal_cfg80211_sched_scan_start(struct wiphy *wiphy,
+ 		LEAVE();
+ 		return -EINVAL;
+ 	}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
++	PRINTM(MIOCTL,
++	       "%s sched scan: n_ssids=%d n_match_sets=%d n_channels=%d interval=%d ie_len=%d\n",
++	       priv->netdev->name, request->n_ssids, request->n_match_sets,
++	       request->n_channels, request->scan_plans[0].interval,
++	       (int)request->ie_len);
++#else
+ 	PRINTM(MIOCTL,
+ 	       "%s sched scan: n_ssids=%d n_match_sets=%d n_channels=%d interval=%d ie_len=%d\n",
+ 	       priv->netdev->name, request->n_ssids, request->n_match_sets,
+ 	       request->n_channels, request->interval, (int)request->ie_len);
++#endif
+     /** We have pending scan, start bgscan later */
+ 	if (priv->phandle->scan_pending_on_block)
+ 		priv->scan_cfg.start_later = MTRUE;
+@@ -3472,8 +3480,14 @@ woal_cfg80211_sched_scan_start(struct wiphy *wiphy,
+ 	   second */
+ 	/* We want to use 30 second for per scan cycle */
+ 	priv->scan_cfg.scan_interval = MIN_BGSCAN_INTERVAL;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
++	/* only support 1 scan plan now */
++	if (request->scan_plans[0].interval > MIN_BGSCAN_INTERVAL)
++		priv->scan_cfg.scan_interval = request->scan_plans[0].interval;
++#else
+ 	if (request->interval > MIN_BGSCAN_INTERVAL)
+ 		priv->scan_cfg.scan_interval = request->interval;
++#endif
+ 
+ 	priv->scan_cfg.repeat_count = DEF_REPEAT_COUNT;
+ 	priv->scan_cfg.report_condition =
+@@ -4206,6 +4220,9 @@ woal_register_cfg80211(moal_private *priv)
+ 	wiphy->coalesce = &coalesce_support;
+ #endif
+ 	wiphy->max_scan_ssids = MRVDRV_MAX_SSID_LIST_LENGTH;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
++	wiphy->max_sched_scan_plans = 1;
++#endif
+ 	wiphy->max_scan_ie_len = MAX_IE_SIZE;
+ 	wiphy->interface_modes = 0;
+ 	wiphy->interface_modes =

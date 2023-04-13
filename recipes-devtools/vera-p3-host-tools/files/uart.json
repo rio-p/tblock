@@ -1,0 +1,7 @@
+{
+ "version": 0,
+ "flags": 0,
+ "clk_cfg_id": 0,
+ "log_level": 0,
+ "gnss_uart": 1
+}

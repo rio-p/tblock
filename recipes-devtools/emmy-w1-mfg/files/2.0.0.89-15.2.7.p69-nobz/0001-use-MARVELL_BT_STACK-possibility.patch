@@ -1,0 +1,590 @@
+From dfc1a585cfbd127074c7ae7bc9b61f6f3176bade Mon Sep 17 00:00:00 2001
+From: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Date: Thu, 20 Apr 2017 11:02:44 +0200
+Subject: [PATCH] use MARVELL_BT_STACK possibility
+
+Signed-off-by: Soeren Hoeckner <soeren.hoeckner@u-blox.com>
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ bin/bridge/bridge_linux_0.1.0.40/bridge/Makefile   |   1 -
+ .../bridge_linux_0.1.0.40/bridge/bridge_init.conf  |   3 +-
+ .../bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c | 400 ++++++++++++++++-----
+ .../bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h |   2 +
+ 4 files changed, 320 insertions(+), 86 deletions(-)
+ mode change 100755 => 100644 bin/bridge/bridge_linux_0.1.0.40/bridge/bridge_init.conf
+ mode change 100755 => 100644 bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c
+ mode change 100755 => 100644 bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h
+
+diff --git a/bin/bridge/bridge_linux_0.1.0.40/bridge/Makefile b/bin/bridge/bridge_linux_0.1.0.40/bridge/Makefile
+index f43e9e6..bc19684 100755
+--- a/bin/bridge/bridge_linux_0.1.0.40/bridge/Makefile
++++ b/bin/bridge/bridge_linux_0.1.0.40/bridge/Makefile
+@@ -35,7 +35,6 @@ CFLAGS += -DNONPLUG_SUPPORT
+ CPPFLAGS += -DNONPLUG_SUPPORT
+ ifeq ($(CONFIG_MARVELL_BT),y)
+ CFLAGS += -DMARVELL_BT_STACK
+-LIBS = -lbluetooth
+ else
+ LIBS = -lbluetooth
+ endif
+diff --git a/bin/bridge/bridge_linux_0.1.0.40/bridge/bridge_init.conf b/bin/bridge/bridge_linux_0.1.0.40/bridge/bridge_init.conf
+old mode 100755
+new mode 100644
+index 7ef6563..1655e34
+--- a/bin/bridge/bridge_linux_0.1.0.40/bridge/bridge_init.conf
++++ b/bin/bridge/bridge_linux_0.1.0.40/bridge/bridge_init.conf
+@@ -20,7 +20,8 @@ Client_port=9931
+ WLAN_interface_name="mlan0"
+ 
+ # BT Interface name
+-BT_interface_name="hci0"
++# BT_interface_name="hci0"
++BT_interface_name="/dev/mbtchar0"
+ 
+ # Protocol (TCP or UDP)
+ Protocol="TCP"
+diff --git a/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c b/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c
+old mode 100755
+new mode 100644
+index 9888907..daefb0a
+--- a/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c
++++ b/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.c
+@@ -50,10 +50,12 @@
+ #include <linux/ioctl.h>
+ #include <linux/wireless.h>
+ #ifdef NONPLUG_SUPPORT
++#ifndef MARVELL_BT_STACK
+ #include <bluetooth/bluetooth.h>
+ #include <bluetooth/hci.h>
+ #include <bluetooth/hci_lib.h>
+ #endif
++#endif
+ #include "drv_wrapper.h"
+ 
+ #ifdef MFG_UPDATE
+@@ -92,7 +94,7 @@ static int sockfd = 0, ioctl_val, subioctl_val;
+ #ifdef NONPLUG_SUPPORT
+ static int hci_sock_char_nfc = 0;
+ static int hci_sock_char_fm = 0;
+-static int hci_sock_bz = 0;
++static int hci_sock_bt = 0;
+ static char *hci_addr = NULL;
+ static char addr[18];
+ static char *hci_intf = "hci0";
+@@ -215,7 +217,7 @@ get_ioctl_no(const char *ifname,
+ static int
+ get_hci_dev_info(int s, int dev_id, long arg)
+ {
+-//#ifndef MARVELL_BT_STACK
++#ifndef MARVELL_BT_STACK
+   struct hci_dev_info di = { dev_id:dev_id };
+ 
+     if (ioctl(s, HCIGETDEVINFO, (void *) &di))
+@@ -225,7 +227,7 @@ get_hci_dev_info(int s, int dev_id, long arg)
+         ba2str(&di.bdaddr, addr);
+         hci_addr = addr;
+     }
+-//#endif
++#endif
+     return 0;
+ }
+ 
+@@ -239,7 +241,7 @@ drv_wrapper_get_hci_info(char *cmdname)
+ {
+     int ret = 0;
+ 
+-//#ifndef MARVELL_BT_STACK
++#ifndef MARVELL_BT_STACK
+     if (!cmdname) {
+         printf("Interface name is not present\n");
+         return -1;
+@@ -248,7 +250,7 @@ drv_wrapper_get_hci_info(char *cmdname)
+     hci_for_each_dev(HCI_UP, get_hci_dev_info, 0);
+ 
+     ret = (hci_addr == NULL) ? -1 : 0;
+-//#endif
++#endif
+ 
+     return ret;
+ }
+@@ -270,39 +272,51 @@ drv_wrapper_init_hci(char *cmdname)
+     hci_sock_char_nfc = open(dev_name, O_RDWR | O_NOCTTY);
+     if (hci_sock_char_nfc >= 0) {
+         printf("Use device %s\n", dev_name);
+-	use_char = 1;
++    use_char = 1;
+     } else {
+         printf("no nfc %s", dev_name);
+         ret = -1;
+     }
+ 
+-    strcpy(dev_name, "/dev/mfmchar0");
+-    hci_sock_char_fm = open(dev_name, O_RDWR | O_NOCTTY);
+-    if (hci_sock_char_fm >= 0) {
+-        printf("Use device %s\n", dev_name);
+-	use_char = 1;
+-    } else {
+-        printf("no nfc %s", dev_name);
+-        ret = -1;
+-    }
++    // strcpy(dev_name, "/dev/mfmchar0");
++    // hci_sock_char_fm = open(dev_name, O_RDWR | O_NOCTTY);
++    // if (hci_sock_char_fm >= 0) {
++    //     printf("Use device %s\n", dev_name);
++    // use_char = 1;
++    // } else {
++    //     printf("no nfc %s", dev_name);
++    //     ret = -1;
++    // }
++
++#ifdef MARVELL_BT_STACK
++	strcpy(dev_name, "/dev/mbtchar0");
++	hci_sock_bt = open(dev_name, O_RDWR | O_NOCTTY);
++	if (hci_sock_bt >= 0) {
++		printf("Use device %s on fd=%x\n", dev_name,hci_sock_bt);
++	} else {
++		printf("Cannot open device %s on fd=%x", dev_name, hci_sock_bt);
++		ret = -1;
++	}
++#else
++	if (!cmdname) {
++		printf("Interface name is not present\n");
++		return -1;
++	}
++	hci_intf = cmdname;
++	hci_addr = NULL;
++	printf("Initialize drvwrapper for BT ....\n");
++	hci_for_each_dev(HCI_UP, get_hci_dev_info, 0);
++	if (hci_addr == NULL) {
++		printf("BT interface is not present\n");
++		ret = -1;
++	} else {
++		int hci_dev_id;
++		hci_dev_id = hci_get_route((bdaddr_t *) hci_addr);
++		hci_sock_bt = hci_open_dev(hci_dev_id);
++		ret = 0;
++	}
++#endif
+ 
+-    if (!cmdname) {
+-        printf("Interface name is not present\n");
+-        return -1;
+-    }
+-    hci_intf = cmdname;
+-    hci_addr = NULL;
+-    printf("Initialize drvwrapper for BT ....\n");
+-    hci_for_each_dev(HCI_UP, get_hci_dev_info, 0);
+-    if (hci_addr == NULL) {
+-        printf("BT interface is not present\n");
+-        ret = -1;
+-    } else {
+-        int hci_dev_id;
+-        hci_dev_id = hci_get_route((bdaddr_t *) hci_addr);
+-        hci_sock_bz = hci_open_dev(hci_dev_id);
+-        ret = 0;
+-    }
+     return ret;
+ }
+ 
+@@ -321,8 +335,8 @@ drv_wrapper_deinit_hci()
+         close(hci_sock_char_nfc);
+     if (hci_sock_char_fm)
+         close(hci_sock_char_fm);
+-    if (hci_sock_bz)
+-        close(hci_sock_bz);
++    if (hci_sock_bt)
++        close(hci_sock_bt);
+     hci_addr = NULL;
+     return ret;
+ }
+@@ -337,6 +351,53 @@ drv_wrapper_send_hci_command(short ogf, short ocf, unsigned char *in_buf,
+                              int in_buf_len, unsigned char *out_buf,
+                              int *out_buf_len)
+ {
++#define EVENT_BUF_SIZE 400
++	int status = 0;
++#ifdef MARVELL_BT_STACK
++	int len;
++#else
++	struct hci_filter flt;
++#endif
++	int dummy_buf[512];
++	int avail = 0;
++
++#ifdef MARVELL_BT_STACK
++	len = write(hci_sock_bt, in_buf, in_buf_len);
++	if (len != in_buf_len) {
++		printf("Failed to write %d bytes (written %d)\n", in_buf_len,
++		       len);
++		status = -1;
++	}
++#else
++	/* Setup filter */
++	hci_filter_clear(&flt);
++	hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
++	hci_filter_all_events(&flt);
++	if (setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
++		printf("HCI filter setup failed\n");
++		return (-1);
++	}
++
++	status = hci_send_cmd(hci_sock, ogf, ocf, in_buf_len - 4, in_buf + 4);
++#endif
++	if (status < 0) {
++		printf("Failed to send command (OGF = %04x OCF = %04x)\n", ogf,
++		       ocf);
++		return status;
++	}
++
++	do {
++		*out_buf_len = read(hci_sock_bt, out_buf, EVENT_BUF_SIZE);
++		printf("Rx Event %X for %02X %02X \n", out_buf[1], out_buf[4],
++		       out_buf[5]);
++		printf("In Cmd %02X %02X \n", in_buf[1], in_buf[2]);
++	} while ((out_buf[1] != 0xFF)
++		 && !(out_buf[1] != 0xF && out_buf[4] == in_buf[1]
++		      && out_buf[5] == in_buf[2]));
++
++	if (out_buf[1] == 0xFF)
++		avail = read(hci_sock_bt, dummy_buf, EVENT_BUF_SIZE);
++	return status;
+ }
+ #endif /* NONPLUG_SUPPORT */
+ 
+@@ -411,6 +472,137 @@ drv_wrapper_deinit()
+     return ret;
+ }
+ 
++#ifndef MFG_UPDATE
++
++/** 
++ *  @brief drv wrapper hostcmd ioctl
++ *   
++ *  @return  0 on success, otherwise error code
++ */
++int drv_wrapper_ioctl(char *cmdname, unsigned char *p_buf, int *resp_len)
++{
++    int status = -1;
++    HostCmd_DS_Gen *hostcmd_hdr = (HostCmd_DS_Gen *) p_buf;
++
++    *resp_len = 0;
++    strncpy(userdata.ifr_name, cmdname, strlen(cmdname));
++    userdata.ifr_data = (char *)p_buf;
++    status = ioctl(sockfd, ioctl_val, &userdata);
++    *resp_len = hostcmd_hdr->size;
++
++    return status;
++}
++
++/** 
++ *  @brief drv wrapper bridge command handling
++ *   
++ *  @return  0 on success, otherwise error code
++ */
++int
++drv_wrapper_bridge_command(char *cmdname, unsigned char *buf, int *length,
++               char *script)
++{
++    int ret;
++    unsigned char pInfo[MAXBUF];
++    char command[MAXBUF];
++#ifdef NONPLUG_SUPPORT
++    int RetBufSize;
++    short real_ogf;
++    short real_ocf;
++    unsigned char EventData[MAXBUF];
++#endif
++    cmd_header *cmd_hd = (cmd_header *) buf;
++
++    /* Check command type and subtype */
++    switch (cmd_hd->type) {
++    case TYPE_LOCAL:
++        switch (cmd_hd->sub_type) {
++        case SUB_TYPE_LOAD_DRV:
++            if (!script) {
++                printf("Load script is not provided\n");
++                break;
++            }
++            if (!drv_wrapper_get_info(cmdname)) {
++                printf("Driver already loaded\n");
++            } else {
++                sprintf(command, "sh %s", script);
++                printf("Load driver ......\n");
++                if (system(command) != 0) {
++                    printf("Failed to run the script\n");
++                } else {
++                    drv_wrapper_init(cmdname);
++                }
++            }
++            break;
++        case SUB_TYPE_UNLOAD_DRV:
++            if (!script) {
++                printf("Unload script is not provided\n");
++                break;
++            }
++            if (!drv_wrapper_get_info(cmdname)) {
++                sprintf(command, "sh %s", script);
++                drv_wrapper_deinit();
++                printf("Unload driver ......\n");
++                ret = system(command);
++                if (ret)
++                    printf("Failed to run the script\n");
++            } else {
++                printf("No such device\n");
++            }
++            break;
++        case SUB_TYPE_GET_BRIDGE_CFG:
++            break;
++        case SUB_TYPE_SET_BRIDGE_CFG:
++            break;
++        default:
++            printf("Unknown local command subtype: %d\n",
++                   cmd_hd->sub_type);
++            ret = -1;
++        }
++        break;
++
++    case TYPE_WLAN:
++        printf("WLAN Command\n");
++        memcpy(pInfo, (buf + sizeof(cmd_header)),
++               *length - sizeof(cmd_header));
++        ret = drv_wrapper_ioctl(cmdname, pInfo, length);
++        /* Update command header information */
++        cmd_hd->status = ret;
++        cmd_hd->length = *length;
++        /* Copy the pInfo back to the receive buffer */
++        memcpy((buf + sizeof(cmd_header)), pInfo, *length);
++        *length += sizeof(cmd_header);
++        break;
++#ifdef NONPLUG_SUPPORT
++    case TYPE_HCI:
++        memcpy(pInfo, (buf + sizeof(cmd_header)),
++               *length - sizeof(cmd_header));
++        real_ogf = pInfo[2] >> 2;
++        real_ocf = ((pInfo[2] & 0x03) << 8) + pInfo[1];
++        printf("HCI Command (OGF = %04x OCF = %04x)\n", real_ogf,
++               real_ocf);
++        ret =
++            drv_wrapper_send_hci_command(real_ogf, real_ocf, pInfo,
++                         (*length - sizeof(cmd_header)),
++                         EventData, &RetBufSize);
++        /* Update command header information */
++        cmd_hd->status = ret;
++        cmd_hd->length = RetBufSize + sizeof(cmd_header);
++        /* Copy the pInfo back to the receive buffer */
++        memcpy((buf + sizeof(cmd_header)), EventData, RetBufSize);
++        *length = RetBufSize + sizeof(cmd_header);
++        break;
++#endif
++    default:
++        printf("Unknown command type: %d\n", cmd_hd->type);
++        break;
++    }
++    return ret;
++}
++
++#else               //MFG_UPDATE
++
++
+ #ifdef NONPLUG_SUPPORT
+ 
+ /*
+@@ -420,11 +612,15 @@ drv_wrapper_deinit()
+ int
+ drv_proc_hci_command(drv_cb * drv, unsigned char *buf, int *msglen, int buflen)
+ {
++    printf("drv_proc_hci_command \n"); /* a timeout occured */
++
+ #define EVENT_BUF_SIZE 400
+     int status = 0;
+     int hci_sock = 0;
+     int len;
++#ifndef MARVELL_BT_STACK
+     struct hci_filter flt;
++#endif
+     int dummy_buf[512];
+     int avail = 0;
+ 
+@@ -436,74 +632,108 @@ drv_proc_hci_command(drv_cb * drv, unsigned char *buf, int *msglen, int buflen)
+     struct timeval timeout;
+     timeout.tv_sec = 5;
+     timeout.tv_usec = 0;
+-    int rv;
+-
+-    memset(evntbuf, 0, MAXBUF);
++    int rv,i;
+ 
+     ogf = buf[2] >> 2;
+     ocf = ((buf[2] & 0x03) << 8) + buf[1];
+ 
+-    if (  use_char == 1 )
++    // if (  use_char == 1 )
++    // {
++        if ( ocf == 0x281 )
++            hci_sock = hci_sock_char_nfc;
++        else
++            hci_sock = hci_sock_bt;
++// }
++    // else
++    
++    if ( (buf[4] != 0x1f) &&  (buf[4] != 0xff) && ( buf[4] & SPEC_NFC_EVENT ) == 0xf ) 
+     {
+-    if ( ocf == 0x281 )
+-    hci_sock = hci_sock_char_nfc;
+-    else
+-    hci_sock = hci_sock_char_fm;
++
++    	if ( hci_sock != hci_sock_char_fm )
++    	{
++        	FD_ZERO(&set);
++        	FD_SET(hci_sock,&set);
++                rv = select(hci_sock + 1, &set, NULL, NULL, &timeout);
++        	if(rv == -1)
++            	perror("system call doesn't supported \n"); /* an error accured */
++          	else if(rv == 0)
++            	printf("time out from tags \n"); /* a timeout occured */
++          	else
++            	*msglen = read(hci_sock, evntbuf, EVENT_BUF_SIZE);
++
++            	memcpy(buf, evntbuf, *msglen);
++            	return status;
++    	}
+     }
+-    else
+-    hci_sock = hci_sock_bz;
+-
+-    if ( (buf[4] != 0x1f) &&  (buf[4] != 0xff) && ( buf[4] & SPEC_NFC_EVENT ) == 0xf ) {
+-
+-	if ( hci_sock != hci_sock_char_fm )
+-	{
+-	FD_ZERO(&set);
+-	FD_SET(hci_sock,&set);
+-        rv = select(hci_sock + 1, &set, NULL, NULL, &timeout);
+-	if(rv == -1)
+-    	perror("system call doesn't supported \n"); /* an error accured */
+-  	else if(rv == 0)
+-    	printf("time out from tags \n"); /* a timeout occured */
+-  	else
+-    	*msglen = read(hci_sock, evntbuf, EVENT_BUF_SIZE);
+-
+-    	memcpy(buf, evntbuf, *msglen);
+-    	return status;
+-	}
++
++#ifdef MARVELL_BT_STACK
++    printf("drv_proc_hci_command ogf=0x%x ocf=0x%x\n",ogf,ocf); /* a timeout occured */
++
++    printf("drv_proc_hci_command packetdata: '"); /* a timeout occured */
++    for (i=0;i < *msglen ; i++) {
++        printf("%02x",buf[i]);
+     }
+ 
+-    if ( ( ocf == 0x281 && use_char == 1 ) || (ocf == 0x280 && use_char == 1 ) )
+-   {
++    printf("'\n");
++	
+     len = write(hci_sock, buf, *msglen);
++	
+     if (len != *msglen) {
+-        printf("Failed to write %d bytes (written %d)\n", *msglen, len);
+-        status = -1;
++		printf("Failed to write %d bytes (written %d)\n", *msglen, len);
++		status = -1;
++	}
++
++#else
++	/* Setup filter */
++	// hci_filter_clear(&flt);
++	// hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
++	// hci_filter_all_events(&flt);
++	// if (setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
++	// 	mfg_dprint(DBG_ERROR, "HCI filter setup failed\n");
++	// 	return -1;
++	// }
++
++
++	status = hci_send_cmd(hci_sock, ogf, ocf, *msglen - 4, buf + 4);
++    if ( ( ocf == 0x281 && use_char == 1 ) || (ocf == 0x280 && use_char == 1 ) )
++    {
++        len = write(hci_sock, buf, *msglen);
++        if (len != *msglen) {
++            printf("Failed to write %d bytes (written %d)\n", *msglen, len);
++            status = -1;
++        }
+     }
+-   }
+     else
+-   {
+-    hci_sock = hci_sock_bz;
+-    /* Setup filter */
+-    hci_filter_clear(&flt);
+-    hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
+-    hci_filter_all_events(&flt);
+-    if (setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
+-        mfg_dprint(DBG_ERROR, "HCI filter setup failed\n");
+-        return -1;
+-    }
++    {
++        hci_sock = hci_sock_bt;
++        /* Setup filter */
++        hci_filter_clear(&flt);
++        hci_filter_set_ptype(HCI_EVENT_PKT, &flt);
++        hci_filter_all_events(&flt);
++        if (setsockopt(hci_sock, SOL_HCI, HCI_FILTER, &flt, sizeof(flt)) < 0) {
++            mfg_dprint(DBG_ERROR, "HCI filter setup failed\n");
++            return -1;
++        }
+ 
+-    status = hci_send_cmd(hci_sock, ogf, ocf, *msglen - 4, buf + 4);
++        status = hci_send_cmd(hci_sock, ogf, ocf, *msglen - 4, buf + 4);
+     } //endif
+ 
+-    if (status < 0) {
+-        mfg_dprint(DBG_ERROR,
+-                   "Failed to send command (OGF = %04x OCF = %04x)\n",
+-                   ogf, ocf);
+-        return status;
+-    }
+ 
++#endif
++    printf("drv_proc_hci_command status=0x%x\n",status); /* a timeout occured */
++
++	if (status < 0) {
++		mfg_dprint(DBG_ERROR,
++			   "Failed to send command (OGF = %04x OCF = %04x)\n",
++			   ogf, ocf);
++		return status;
++	}
++
++    memset(evntbuf, 0, MAXBUF);
+ 
+     do {
++        printf("drv_proc_hci_command read events \n"); /* a timeout occured */
++
+         *msglen = read(hci_sock, evntbuf, EVENT_BUF_SIZE);
+         printf("Rx Event %X for %2.2X %2.2X \n", evntbuf[1], evntbuf[4],
+                evntbuf[5]);
+@@ -675,3 +905,5 @@ drv_unload_driver(struct _drv_cb *drv, int drv_if)
+     }
+     return 0;
+ }
++
++#endif
+diff --git a/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h b/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h
+old mode 100755
+new mode 100644
+index d14665c..2940ede
+--- a/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h
++++ b/bin/bridge/bridge_linux_0.1.0.40/drvwrapper/drv_wrapper.h
+@@ -89,6 +89,8 @@ extern "C"
+     int drv_wrapper_init(char *cmdname);
+     int drv_wrapper_deinit();
+     int drv_wrapper_ioctl(char *cmdname, unsigned char *p_buf, int *resp_len);
++    int sub_drv_proc_wlan(char *ifname, unsigned char *buf, int *rsplen,
++			int buflen);
+     int drv_wrapper_bridge_command(char *cmdname, unsigned char *buf,
+                                    int *length, char *script);
+ #ifdef NONPLUG_SUPPORT
+-- 
+2.1.4
+

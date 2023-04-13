@@ -1,0 +1,2 @@
+# Workaround for kernels with usbcore wakeup issues
+ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1286", ATTRS{idProduct}=="204a", ATTR{power/control}="on"

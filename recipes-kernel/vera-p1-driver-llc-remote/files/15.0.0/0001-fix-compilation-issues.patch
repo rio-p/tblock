@@ -1,0 +1,228 @@
+From 794d1c9629950130c2932e155a7e7b1e4a377944 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Mon, 7 May 2018 15:50:20 +0200
+Subject: [PATCH] fix compilation issues
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ Makefile                                |  2 +-
+ bsp/app/gpsd/Makefile                   |  3 +--
+ bsp/app/libpcap/Makefile                |  4 ++--
+ cohda/app/llc/Makefile                  |  6 ++++--
+ cohda/app/llc/lib/Makefile              |  2 +-
+ cohda/app/llc/plugin/Makefile           |  2 +-
+ cohda/app/llc/plugin/rx/Makefile        |  1 +
+ cohda/app/llc/plugin/sec/Makefile       |  1 +
+ cohda/app/llc/plugin/simtdapi/Makefile  |  1 +
+ cohda/app/llc/plugin/tx/Makefile        |  1 +
+ cohda/kernel/drivers/cohda/llc/Makefile | 18 ++++++++++--------
+ 11 files changed, 24 insertions(+), 17 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 9983a64..385f436 100755
+--- a/Makefile
++++ b/Makefile
+@@ -15,7 +15,7 @@ TARGET_DIR_i686    ?=$(PWD)
+ KERNEL_SRC_X86_64 ?=/lib/modules/$(UNAME_R)/build
+ TARGET_DIR_X86_64 ?=$(PWD)
+ 
+-SUDO=sudo
++SUDO=
+ 
+ BOARD?=$(UNAME_M)
+ 
+diff --git a/bsp/app/gpsd/Makefile b/bsp/app/gpsd/Makefile
+index 065b618..af07303 100755
+--- a/bsp/app/gpsd/Makefile
++++ b/bsp/app/gpsd/Makefile
+@@ -40,8 +40,7 @@ endif
+ INSTALLDIR ?= /usr/local
+ _HOST      ?=
+ _PREFIX    ?= $(INSTALLDIR)/
+-SUDOPATH   := env "PATH=$(PATH)"
+-SUDO       ?= sudo -E $(SUDOPATH)
++SUDO       ?=
+ 
+ ifdef SDKTARGETSYSROOT
+ SYSROOT := sysroot=$(SDKTARGETSYSROOT)
+diff --git a/bsp/app/libpcap/Makefile b/bsp/app/libpcap/Makefile
+index 664f13c..b5e89b4 100755
+--- a/bsp/app/libpcap/Makefile
++++ b/bsp/app/libpcap/Makefile
+@@ -14,7 +14,7 @@ ifeq ($(BOARD),$(NATIVE))
+   INSTALLDIR ?= /usr
+   _HOST    ?= 
+   _PREFIX  ?= $(INSTALLDIR)/
+-  SUDO ?= sudo
++  SUDO ?=
+ else
+   _HOST      ?= $(patsubst %-,%,$(strip $(filter-out ccache,$(CROSS_COMPILE))))
+   INSTALLDIR ?= $(CURDIR)/../../../bsp/image/rootfs
+@@ -29,7 +29,7 @@ NAME=libpcap-1.8.1
+ SRC_TGZ=$(NAME).tar.gz
+ SRC_DIR=$(NAME)
+ JOBS=$(shell getconf _NPROCESSORS_ONLN)
+-SUDO ?= sudo
++SUDO ?=
+ 
+ # Needed by some toolchains
+ CONFIGURE_FLAGS ?=
+diff --git a/cohda/app/llc/Makefile b/cohda/app/llc/Makefile
+index 52bc457..b356769 100755
+--- a/cohda/app/llc/Makefile
++++ b/cohda/app/llc/Makefile
+@@ -19,6 +19,8 @@ CC := $(subst $\",,$(CC))
+ # Fallback defaults (host)
+ BOARD ?= $(shell uname -m)
+ 
++SETCAP := $(shell which setcap || echo /sbin/setcap)
++
+ # If using yocto/poky toolchain, use CC in environment
+ ifneq ($(TARGET_PREFIX),arm-poky-linux-gnueabi-)
+   CC := "$(CROSS_COMPILE)gcc"
+@@ -105,7 +107,7 @@ SUBDIRS ?= lib plugin
+ $(APP): $(SUBDIRS) $(LIBS) $(OBJS)
+ 	@echo "Building llc tool for $(BOARD)"
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
+-	sudo setcap cap_net_raw=eip $@
++#	$(SETCAP) cap_net_raw=eip $@
+ 
+ %.o: %.c
+ 	-@mkdir --parents $(shell dirname $(DEPDIR)/$*.d)
+@@ -144,7 +146,7 @@ install:
+ 	$(SUDO) install -d $(INSTALLDIR)/lib
+ 	$(SUDO) install -d $(INSTALLDIR)/plugin
+ 	$(SUDO) install -c $(APP) $(INSTALLDIR)
+-	sudo setcap cap_net_raw=eip $(INSTALLDIR)/$(APP)
++#	$(SETCAP) cap_net_raw=eip $(INSTALLDIR)/$(APP)
+ 	$(SUDO) install -c lib/libLLC.so $(INSTALLDIR)/lib
+ 	$(SUDO) install -c $(wildcard plugin/*.so) $(INSTALLDIR)/plugin
+ #	for dir in $(SUBDIRS); do \
+diff --git a/cohda/app/llc/lib/Makefile b/cohda/app/llc/lib/Makefile
+index e3211fa..0dc7145 100755
+--- a/cohda/app/llc/lib/Makefile
++++ b/cohda/app/llc/lib/Makefile
+@@ -85,7 +85,7 @@ PCAP_LIB_BIN ?= $(PCAP_LIB_DIR)/libpcap.a
+ 
+ INSTALLDIR ?=
+ ifeq (,$(findstring $(HOME),$(INSTALLDIR))) 
+-  SUDO=sudo
++  SUDO=
+ endif
+ 
+ 
+diff --git a/cohda/app/llc/plugin/Makefile b/cohda/app/llc/plugin/Makefile
+index 48e2cef..0cf233a 100755
+--- a/cohda/app/llc/plugin/Makefile
++++ b/cohda/app/llc/plugin/Makefile
+@@ -22,7 +22,7 @@ endif
+ ifneq (,$(findstring $(BOARD),x86 i686 x86_64))
+   INSTALLDIR ?= $(CURDIR)/../../../bin/plugin
+   ifeq ($(INSTALLDIR),/opt/cohda/bin) 
+-    SUDO=sudo
++    SUDO=
+   endif
+ endif
+ 
+diff --git a/cohda/app/llc/plugin/rx/Makefile b/cohda/app/llc/plugin/rx/Makefile
+index a8dee88..ce08a65 100755
+--- a/cohda/app/llc/plugin/rx/Makefile
++++ b/cohda/app/llc/plugin/rx/Makefile
+@@ -61,6 +61,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/sec/Makefile b/cohda/app/llc/plugin/sec/Makefile
+index 07dcbb4..649ad6c 100755
+--- a/cohda/app/llc/plugin/sec/Makefile
++++ b/cohda/app/llc/plugin/sec/Makefile
+@@ -62,6 +62,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__ -D__ENABLE_UNITTEST__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/simtdapi/Makefile b/cohda/app/llc/plugin/simtdapi/Makefile
+index 1e173fb..44f94ce 100755
+--- a/cohda/app/llc/plugin/simtdapi/Makefile
++++ b/cohda/app/llc/plugin/simtdapi/Makefile
+@@ -68,6 +68,7 @@ EXTRA_CFLAGS += -I. \
+                 -I$(COHDA_INCLUDE_DIR) \
+                 -D__LLC__
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/app/llc/plugin/tx/Makefile b/cohda/app/llc/plugin/tx/Makefile
+index fc681ad..6ad4045 100755
+--- a/cohda/app/llc/plugin/tx/Makefile
++++ b/cohda/app/llc/plugin/tx/Makefile
+@@ -61,6 +61,7 @@ EXTRA_CFLAGS += -I. \
+                 -D__LLC__
+ 
+ LDFLAGS += -L$(CURDIR)/../../lib -lLLC -lpcap
++LDFLAGS += -L$(CURDIR)/../../../../../bsp/image/rootfs/usr/lib -lLLC -lpcap
+ 
+ LIBS +=
+ 
+diff --git a/cohda/kernel/drivers/cohda/llc/Makefile b/cohda/kernel/drivers/cohda/llc/Makefile
+index 4916128..df0cde3 100755
+--- a/cohda/kernel/drivers/cohda/llc/Makefile
++++ b/cohda/kernel/drivers/cohda/llc/Makefile
+@@ -10,9 +10,9 @@ endif
+ 
+ BOARD ?= $(shell uname -m)
+ 
+-EXTRA_CFLAGS += -I$(PWD) \
+-                -I$(PWD)/.. \
+-                -I$(PWD)/../../../include \
++EXTRA_CFLAGS += -I$(M) \
++                -I$(M)/.. \
++                -I$(M)/../../../include \
+                 -D__LLC__ -DBOARD_$(shell echo $(BOARD) | tr a-z A-Z)
+ 
+ TARGET = cw-llc
+@@ -42,6 +42,8 @@ else
+ 
+ PWD       := $(shell pwd)
+ 
++XXD := $(shell which xxd || echo /usr/bin/xxd)
++
+ ifneq (,$(findstring $(BOARD),mk2 mk3))
+   INSTALLDIR ?= $(PWD)/../../../../../tools/ltib/rootfs
+   KERNELDIR ?= $(PWD)/../../../../../bsp/kernel/2.6.28
+@@ -86,19 +88,19 @@ modules:
+ endif
+ 
+ llc-mk4firmware.inc: SDRMK4Dual.bin
+-	xxd -i $< > $@
++	$(XXD) -i $< > $@
+ 
+ llc-mk5firmware.inc: SDRMK5Dual.bin
+-	xxd -i $< > $@
++	$(XXD) -i $< > $@
+ 
+ llc-mk5spifirmware.inc: SDRMK5DualSPI.bin
+-	xxd -i $< > $@
++	$(XXD) -i $< > $@
+ 
+ llc-bootloader.inc: DFUBootLoader.bin
+-	xxd -i $< > $@
++	$(XXD) -i $< > $@
+ 
+ llc-fastboot.inc: FastBootSpi.bin
+-	xxd -i $< > $@
++	$(XXD) -i $< > $@
+ 
+ install:
+ 	install -d $(INSTALLDIR)
+-- 
+2.11.0
+

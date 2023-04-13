@@ -1,0 +1,29 @@
+From d98d15fa374db1891253369a5cbae044920b1ff3 Mon Sep 17 00:00:00 2001
+From: Tamas Szucs <tamas.szucs@u-blox.com>
+Date: Thu, 14 Dec 2017 17:18:11 +0100
+Subject: [PATCH] fix woal_request_country_power_table() country_txpwrlimit
+
+Signed-off-by: Tamas Szucs <tamas.szucs@u-blox.com>
+---
+ wlan_src/mlinux/moal_main.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/wlan_src/mlinux/moal_main.c b/wlan_src/mlinux/moal_main.c
+index 69d6ade..46beda6 100755
+--- a/wlan_src/mlinux/moal_main.c
++++ b/wlan_src/mlinux/moal_main.c
+@@ -6560,9 +6560,8 @@ woal_request_country_power_table(moal_private *priv, char *country)
+ 	} else {
+ 		strncpy(file_path, "mrvl/", sizeof(file_path));
+ 	}
+-	country_txpwrlimit =
+-		strncpy(file_path + strlen(file_path), country_name,
+-			strlen(country_name));
++	country_txpwrlimit = strncat(file_path, country_name,
++				     sizeof(file_path) - strlen(file_path));
+ 
+ 	if (MLAN_STATUS_SUCCESS !=
+ 	    woal_set_user_init_data(handle, COUNTRY_POWER_TABLE,
+-- 
+2.11.0
+
